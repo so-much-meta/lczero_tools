@@ -32,7 +32,7 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 0.4715215042233467
 ```
 
-Note: In order to make this work with tensorflow CPU-only mode using leela-chess tfprocess, changes had to be made for dimension ordering of the input (most likely the way this change slows things down a lot)...
+Note: In order to make this work with tensorflow CPU-only mode using leela-chess tfprocess, changes had to be made for dimension ordering of the input (most likely this change slows things down a lot)...
 ```
 diff --git a/training/tf/tfprocess.py b/training/tf/tfprocess.py
 index 97f04a2..be79868 100644
