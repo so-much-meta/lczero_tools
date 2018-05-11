@@ -1,5 +1,5 @@
 # lczero_tools
-Utilities for experimenting with leela-chess-zero network located at https://github.com/glinscott/leela-chess/
+Utilities for experimenting with leela-chess-zero, a neural network based chess engine: https://github.com/glinscott/leela-chess/
 
 This makes heavy use of python-chess located at https://github.com/niklasf/python-chess
 
