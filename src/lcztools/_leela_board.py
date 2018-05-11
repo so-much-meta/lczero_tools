@@ -61,7 +61,7 @@ class LeelaBoard:
         # global planes
         planes = []
         flip = False
-        for info in self._info_stack[-1:-5:-1]:
+        for info in self._info_stack[-1:-9:-1]:
             if not flip:
                 planes.append(info.planes)
             else:
