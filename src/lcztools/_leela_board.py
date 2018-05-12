@@ -18,8 +18,10 @@ class LeelaBoard(chess.Board):
         super().__init__()
         self.lcz_stack = []
         self._lcz_transposition_counter = collections.Counter()
-        self._lcz_push()        
+        self._lcz_push()
+        self._is_lcz_pushing = True    
     def _lcz_push(self):
+        # print("_lcz_push")
         # Push data onto the lcz data stack after pushing board moves
         transposition_key = self._transposition_key()
         self._lcz_transposition_counter.update((transposition_key,))
@@ -57,13 +59,22 @@ class LeelaBoard(chess.Board):
             side_to_move=side_to_move, rule50_count=rule50_count
         )
         self.lcz_stack.append(lcz_data)
-    def push_uci(self, uci):
-        super().push_uci(uci)
-        self._lcz_push()
+    def is_game_over(self, *args, **kwargs):
+        if not self._is_lcz_pushing:
+            return super().is_game_over(*args, **kwargs)
+        self._is_lcz_pushing = False
+        result = super().is_game_over(*args, **kwargs)
+        self._is_lcz_pushing = True
+        return result
+    def push(self, move):
+        super().push(move)
+        if self._is_lcz_pushing:
+            self._lcz_push()
     def pop(self):
         result = super().pop()
-        _lcz_data = self.lcz_stack.pop()
-        self._transposition_counter.subtract((_lcz_data.transposition_key,))
+        if self._is_lcz_pushing:
+            _lcz_data = self.lcz_stack.pop()
+            self._lcz_transposition_counter.subtract((_lcz_data.transposition_key,))
         return result
     def features(self):
         '''Get neural network input planes'''
@@ -92,7 +103,7 @@ class LeelaBoard(chess.Board):
         planes[-2] = 0
         planes[-1] = 1
         return planes
-    def uci_to_idx(self, uci_list):
+    def lcz_uci_to_idx(self, uci_list):
         # Return list of NN policy output indexes for this board position, given uci_list
         data = self.lcz_stack[-1]
         # uci_to_idx_index =
