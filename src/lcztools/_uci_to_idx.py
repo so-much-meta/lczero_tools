@@ -1,11 +1,18 @@
 # -*- coding: utf-8 -*-
 
-# idx_to_move is a 2x1858 list -- 0=normal, 1=flipped (black to move)
+# uci_to_idx is a list of four dicts {uci -> NN policy index}
+# 0 = white, no-castling
+# 1 = white, castling
+# 2 = black, no-castling
+# 3 = black, castling
+# Black moves are flipped, and castling moves are mapped to the e8a8, e8h8, e1a1, e1h1 indexes
+#  from their respective UCI names
 
-idx_to_move = []
+uci_to_idx = []
 
 
-_idx_to_move = [
+# White, no-castling
+_idx_to_move_wn = [
     'a1b1', 'a1c1', 'a1d1', 'a1e1', 'a1f1', 'a1g1', 'a1h1',
     'a1a2', 'a1b2', 'a1c2', 'a1a3', 'a1b3', 'a1c3', 'a1a4',
     'a1d4', 'a1a5', 'a1e5', 'a1a6', 'a1f6', 'a1a7', 'a1g7',
@@ -274,13 +281,27 @@ _idx_to_move = [
     'h7h8q', 'h7h8r', 'h7h8b'
 ]
 
-_idx_to_move_flipped = []
-for move in _idx_to_move:
+# White, no castling
+_uci_to_idx_wn = dict((uci, idx) for idx, uci in enumerate(_idx_to_move_wn))
+
+# White, castling
+_uci_to_idx_wc = dict((uci, idx) for idx, uci in enumerate(_idx_to_move_wn))
+_uci_to_idx_wc['e1g1'], _uci_to_idx_wc['e1h1'] = _uci_to_idx_wc['e1h1'], _uci_to_idx_wc['e1g1']
+_uci_to_idx_wc['e1c1'], _uci_to_idx_wc['e1a1'] = _uci_to_idx_wc['e1a1'], _uci_to_idx_wc['e1c1'] 
+
+
+# Black, no castling
+_idx_to_move_bn = []
+for move in _idx_to_move_wn:
     c0,r0,c1,r1,p = move[0],int(move[1]),move[2],int(move[3]),move[4:]
     r0 = 9 - r0
     r1 = 9 - r1
-    _idx_to_move_flipped.append('{}{}{}{}{}'.format(c0,r0,c1,r1,p))
+    _idx_to_move_bn.append('{}{}{}{}{}'.format(c0,r0,c1,r1,p))
+_uci_to_idx_bn = dict((uci, idx) for idx, uci in enumerate(_idx_to_move_bn))
 
-idx_to_move = [_idx_to_move, _idx_to_move_flipped]
+# Black, castling
+_uci_to_idx_bc = dict((uci, idx) for idx, uci in enumerate(_idx_to_move_bn))
+_uci_to_idx_bc['e8g8'], _uci_to_idx_bc['e8h8'] = _uci_to_idx_bc['e8h8'], _uci_to_idx_bc['e8g8']
+_uci_to_idx_bc['e8c8'], _uci_to_idx_bc['e8a8'] = _uci_to_idx_bc['e8a8'], _uci_to_idx_bc['e8c8'] 
 
-    
+uci_to_idx = [_uci_to_idx_wn, _uci_to_idx_wc, _uci_to_idx_bn, _uci_to_idx_bc]

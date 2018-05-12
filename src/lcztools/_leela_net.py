@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-from lcztools._idx_to_move import idx_to_move
+
 from collections import OrderedDict
 
 def _softmax(x):
@@ -19,12 +19,12 @@ class LeelaNet:
             policy = policy.numpy()
             value = value.numpy()
         policy, value = policy[0], value[0][0]
-        if leela_board._board.turn:
-            idx_to_move_dict = dict((uci, idx) for idx, uci in enumerate(idx_to_move[0]))
-        else:
-            idx_to_move_dict = dict((uci, idx) for idx, uci in enumerate(idx_to_move[1]))
+#         if leela_board._board.turn:
+#             idx_to_move_dict = dict((uci, idx) for idx, uci in enumerate(idx_to_move[0]))
+#         else:
+#             idx_to_move_dict = dict((uci, idx) for idx, uci in enumerate(idx_to_move[1]))
         legal_uci = [m.uci() for m in leela_board._board.generate_legal_moves()]
-        legal_indexes = [idx_to_move_dict[uci] for uci in legal_uci]
+        legal_indexes = leela_board.uci_to_idx(legal_uci)
         # print(legal_uci)
         # print(policy)
         softmaxed = _softmax(policy[legal_indexes])

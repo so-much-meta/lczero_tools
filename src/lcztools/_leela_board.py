@@ -2,7 +2,7 @@ import collections
 import numpy as np
 import chess
 import struct
-from lcztools._idx_to_move import idx_to_move
+from lcztools._uci_to_idx import uci_to_idx as _uci_to_idx
 
 flat_planes = []
 for i in range(256):
@@ -22,6 +22,7 @@ class LeelaBoard:
         transposition_key = self._board._transposition_key()
         self._transposition_counter.update((transposition_key,))
         repetitions = self._transposition_counter[transposition_key] - 1
+        # side_to_move = 0 if we're white, 1 if we're black
         side_to_move = 0 if self._board.turn else 1
         rule50_count = self._board.halfmove_clock
         # Figure out castling rights
@@ -81,6 +82,17 @@ class LeelaBoard:
         planes[-2] = 0
         planes[-1] = 1
         return planes
+    def uci_to_idx(self, uci_list):
+        # Return list of NN policy output indexes for this board position, given uci_list
+        info = self._info_stack[-1]
+        # uci_to_idx_index =
+        #  White, no-castling => 0
+        #  White, castling => 1
+        #  Black, no-castling => 2
+        #  Black, castling => 3
+        uci_to_idx_index = (info.us_ooo | info.us_oo) +  2*info.side_to_move
+        uci_idx_dct = _uci_to_idx[uci_to_idx_index]
+        return [uci_idx_dct[m] for m in uci_list]
     def _repr_svg_(self):
         return self._board._repr_svg_()
     def __repr__(self):
