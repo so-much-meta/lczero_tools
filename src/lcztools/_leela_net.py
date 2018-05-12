@@ -23,7 +23,7 @@ class LeelaNet:
 #             idx_to_move_dict = dict((uci, idx) for idx, uci in enumerate(idx_to_move[0]))
 #         else:
 #             idx_to_move_dict = dict((uci, idx) for idx, uci in enumerate(idx_to_move[1]))
-        legal_uci = [m.uci() for m in leela_board._board.generate_legal_moves()]
+        legal_uci = [m.uci() for m in leela_board.generate_legal_moves()]
         legal_indexes = leela_board.uci_to_idx(legal_uci)
         # print(legal_uci)
         # print(policy)
