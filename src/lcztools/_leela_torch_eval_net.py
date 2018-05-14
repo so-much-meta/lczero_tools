@@ -8,7 +8,9 @@ import math
 
 from lcztools._weights_file import read_weights_file
 
-# TODO - Compute square root of batch norm variance and use that...
+# This pytorch implementation slightly optimizes the original by using a simplified "Normalization" layer instead
+# of BatchNorm2d, with precalculated normalization/variance divisors: w = 1/torch.sqrt(w + 1e-5).
+# Without BatchNorm, this is only useful for eval, never training.
 
 class Normalization(nn.Module):
     r"""Applies per-channel transformation (x - mean)*stddiv
