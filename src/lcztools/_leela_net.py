@@ -12,6 +12,8 @@ class LeelaNet:
     def __init__(self, model):
         self.model = model
     def evaluate_batch(self, leela_boards):
+        # TODO/Not implemented
+        raise NotImplementedError
         features = []
         for board in leela_boards:
             features.append(board.features())
