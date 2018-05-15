@@ -40,7 +40,7 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
    * Training data to PGN
    * Loss calculation - allow comparison between networks on same data
 3. OpenCL support! This should be possible with https://github.com/plaidml/plaidml
-4. Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine.
+4. Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine -- in cases where neural network eval speed is the bottleneck.
    * However, no optimizations should get (too much) in the way of clarity or ease of changing code to do experiments.
 
 Note: In order to make this work with tensorflow CPU-only mode using leela-chess tfprocess, changes had to be made for dimension ordering of the input (most likely this change slows things down a lot)...
