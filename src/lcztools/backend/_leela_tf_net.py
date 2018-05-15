@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+# Note: yaml config and code to setup tfrprocess borrowed from here:
+# https://github.com/glinscott/leela-chess/tree/master/training/tf
 
 import tensorflow as tf
 import sys
