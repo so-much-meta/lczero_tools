@@ -34,6 +34,14 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 0.4715215042233467
 ```
 
+## TODO
+1. Implement testing to verify position evaluations match lczero and lc0 engines. (Manual testing makes me only fairly confident this code is currently correct.)
+2. Add training data parser module. Use cases are:
+   * Training data to PGN
+   * Loss calculation - allow comparison between networks on same data
+3. OpenCL support! This should be possible with https://github.com/plaidml/plaidml
+4. Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine.
+
 Note: In order to make this work with tensorflow CPU-only mode using leela-chess tfprocess, changes had to be made for dimension ordering of the input (most likely this change slows things down a lot)...
 ```
 diff --git a/training/tf/tfprocess.py b/training/tf/tfprocess.py
