@@ -4,3 +4,4 @@ leelalogs
 __pycache__
 *.pyc
 *.egg-info/
+lczero.stderr.txt

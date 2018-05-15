@@ -47,17 +47,21 @@ class LCZInfoHandler(chess.uci.InfoHandler):
         self.lcz_move_info.clear()
 
 class LCZEngine:
-    def __init__(self, engine_path, weights_file, threads=1, visits=1, nodes=1, start=True):
+    def __init__(self, engine_path, weights_file, threads=1, visits=1, nodes=1, start=True, stderr='lczero.stderr.txt'):
         self.engine_path = engine_path
         self.weights_file = weights_file
         self.threads = threads
         self.visits = visits
         self.nodes = nodes
         self.info_handler = LCZInfoHandler()
-        self.engine = None        
+        self.engine = None
+        self.stderrfile = stderr
+        self.stderr = None
         if start:
             self.start()
     def start(self):
+        print("Outputting lczero stderr to:", self.stderrfile)
+        self.stderr = open(self.stderrfile, 'w')
         command = [self.engine_path]
         command.extend(['-w', self.weights_file])
         if self.threads is not None:
@@ -67,12 +71,16 @@ class LCZEngine:
         command.extend(['-l', '/tmp/lczlog.txt'])            
         command = map(str, command)
         self.nodes = self.nodes
-        self.engine = chess.uci.popen_engine(command)
+        self.engine = chess.uci.popen_engine(command, stderr=self.stderr)
         print("Leela engine started")
         self.engine.uci()
         self.engine.info_handlers.append(self.info_handler)
     def stop(self):
         self.engine.quit()
+        try:
+            self.stderr.close()
+        except:
+            pass
     def evaluate(self, board):
         '''returns a (policy, value) given a python-chess board where:
         policy is a mapping UCI=>value, sorted highest to lowest
