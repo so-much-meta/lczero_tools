@@ -83,6 +83,9 @@ class LeelaModel(nn.Module):
     def forward(self, x):
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x)
+            if next(self.parameters()).is_cuda:
+                x = x.cuda()
+
         x = x.view(-1, 112, 8, 8)
         out = self.conv_in(x)
         for block in self.residual_blocks:
@@ -96,9 +99,11 @@ class LeelaModel(nn.Module):
     
 class LeelaLoader:
     @staticmethod
-    def from_weights_file(filename, train=False):
+    def from_weights_file(filename, train=False, cuda=False):
         filters, blocks, weights = read_weights_file(filename)
         net = LeelaModel(filters, blocks)
+        if cuda:
+            net.cuda()
         if not train:
             net.eval()
             for p in net.parameters():
