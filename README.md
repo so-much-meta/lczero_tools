@@ -7,7 +7,7 @@ This makes heavy use of python-chess located at https://github.com/niklasf/pytho
 
 The network may be run with pytorch, or tensorflow (tensorflow implementation currently imports from leela-chess training code)
 
-For now, the following is possible (also see test.py):
+For now, the following is possible (also see /tests/*.py):
 ```
 >>> from lcztools import load_network, LeelaBoard
 >>> net = load_network('pytorch', 'weights.txt.gz')
@@ -35,7 +35,8 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 ```
 
 ## TODO
-1. Implement testing to verify position evaluations match lczero and lc0 engines. (Manual testing makes me only fairly confident this code is currently correct.)
+1. Implement testing to verify position evaluations match lczero engine.
+   * Mostly done -- see /tests
 2. Add training data parser module. Use cases are:
    * Training data to PGN
    * Loss calculation - allow comparison between networks on same data
