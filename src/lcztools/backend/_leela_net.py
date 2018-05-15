@@ -45,7 +45,8 @@ class LeelaNet:
             value = value.cpu().numpy()
         policy, value = policy[0], value[0][0]
         # Knight promotions are represented without a suffix in leela-chess
-        legal_uci = [m.uci().rstrip('n') for m in leela_board.generate_legal_moves()]
+        # ==> the transformation is done in lcz_uci_to_idx
+        legal_uci = [m.uci() for m in leela_board.generate_legal_moves()]
         if legal_uci:
             legal_indexes = leela_board.lcz_uci_to_idx(legal_uci)
             softmaxed = _softmax(policy[legal_indexes])

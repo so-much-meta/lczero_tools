@@ -105,6 +105,11 @@ class LeelaBoard(chess.Board):
         return planes
     def lcz_uci_to_idx(self, uci_list):
         # Return list of NN policy output indexes for this board position, given uci_list
+        
+        # TODO: Perhaps it's possible to just add the uci knight promotion move to the index dict
+        # currently knight promotions are not in the dict 
+        uci_list = [uci.rstrip('n') for uci in uci_list]
+        
         data = self.lcz_stack[-1]
         # uci_to_idx_index =
         #  White, no-castling => 0
