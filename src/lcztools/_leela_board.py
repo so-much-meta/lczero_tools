@@ -118,14 +118,14 @@ class LeelaBoard(chess.Board):
         '''Return a python-chess board'''
         board = chess.Board()
         # There's certainly faster ways to do this....
-        for move in move_stack:
+        for move in self.move_stack:
             board.push(move)
         return board
     def lcz_to_uci_engine_board(self):
         '''Return a python chess board that is never irreversible
         as this is needed for lczero engine'''
         board = self.lcz_to_board()
-        board.is_irreversible = lambda self, move: False
+        board.is_irreversible = lambda move: False
         return board
     def __repr__(self):
         return "LeelaBoard('{}')".format(self.fen())

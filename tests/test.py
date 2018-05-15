@@ -10,7 +10,6 @@ sys.path.append(os.path.expanduser('~/git/lczero_tools/src'))
 # For now, if using the tensorflow backend, tfprocess is imported to build the network,
 # so training/tf has to be in the Python path
 sys.path.append(os.path.expanduser('~/git/leela-chess/training/tf'))
-
 weights_file = os.path.expanduser('~/git/leela-chess/release/weights.txt.gz')
 
 import lcztools

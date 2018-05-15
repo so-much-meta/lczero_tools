@@ -14,7 +14,7 @@ import sys
 
 
 
-info_pattern = r' *(?P<san>\w*) ->' \
+info_pattern = r' *(?P<san>[\w\+\-\#]*) ->' \
                r' *(?P<visits>\d*)' \
                r' *\(V: *(?P<value>[\d\.]*)\%\)' \
                r' *\(N: *(?P<policy>[\d\.]*)\%\)' \
@@ -42,7 +42,7 @@ class LCZInfoHandler(chess.uci.InfoHandler):
                                    match.group('pv'))
             self.lcz_move_info[info_tuple.san] = info_tuple
         return super().string(string)
-    def lcz_clear():
+    def lcz_clear(self):
         self.lcz_strings.clear()
         self.lcz_move_info.clear()
 
@@ -77,6 +77,7 @@ class LCZEngine:
         '''returns a (policy, value) given a python-chess board where:
         policy is a mapping UCI=>value, sorted highest to lowest
         value is a float'''
+        self.info_handler.lcz_clear()
         self.engine.position(board)
         self.engine.go(nodes=self.nodes)
         san_to_uci = {}
@@ -84,7 +85,11 @@ class LCZEngine:
         policy = {}
         for move in board.legal_moves:
             san = board.san(move)
-            move_info = self.info_handler.lcz_move_info[san]
+            try:
+                move_info = self.info_handler.lcz_move_info[san]
+            except KeyError:
+                san = san.replace('#', '+')
+                move_info = self.info_handler.lcz_move_info[san]
             if value is None and move_info.visits==0:
                 value = move_info.value
             policy[move.uci()] = move_info.policy
