@@ -122,11 +122,11 @@ class LeelaLoader:
         for i, w in enumerate(weights):
             w = torch.Tensor(w)
             if unused_bias: # ((w**2).mean()==0):
-                print(f"{tuple(w.size())} -- Unused bias")
+                # print(f"{tuple(w.size())} -- Unused bias")
                 unused_bias = False
                 continue
             module_name, class_name, typ, param = parameters[param_idx]
-            print(f"{tuple(w.size())} -- {module_name} - {class_name} - {typ}: {tuple(param.size())}")
+            # print(f"{tuple(w.size())} -- {module_name} - {class_name} - {typ}: {tuple(param.size())}")
             if class_name == 'Normalization' and typ=='mean':
                 # print('NMean')
                 # w = w

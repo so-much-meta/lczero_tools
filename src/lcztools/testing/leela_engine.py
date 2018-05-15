@@ -14,7 +14,7 @@ import sys
 
 
 
-info_pattern = r' *(?P<san>[\w\+\-\#]*) ->' \
+info_pattern = r' *(?P<san>[\w\+\-\#\=]*) ->' \
                r' *(?P<visits>\d*)' \
                r' *\(V: *(?P<value>[\d\.]*)\%\)' \
                r' *\(N: *(?P<policy>[\d\.]*)\%\)' \
@@ -92,6 +92,8 @@ class LCZEngine:
                 move_info = self.info_handler.lcz_move_info[san]
             if value is None and move_info.visits==0:
                 value = move_info.value
-            policy[move.uci()] = move_info.policy
+            # This is done so it matches leela-chess
+            #  Necessary???   uci = move.uci().rstrip('n')
+            uci = move.uci()
+            policy[uci] = move_info.policy
         return OrderedDict(sorted(policy.items(), key=itemgetter(1), reverse=True)), value
-          
