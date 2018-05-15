@@ -10,6 +10,8 @@
 
 uci_to_idx = []
 
+# The index-to-uci list originates from here:
+# https://github.com/glinscott/leela-chess/blob/master/lc0/src/chess/bitboard.cc
 
 # White, no-castling
 _idx_to_move_wn = [
