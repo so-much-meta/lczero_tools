@@ -35,7 +35,7 @@ class LeelaNet:
         return policy_legal, value
         
     def evaluate(self, leela_board):
-        features = leela_board.features()
+        features = leela_board.lcz_features()
         policy, value = self.model(features)
         if not isinstance(policy, np.ndarray):
             # Assume it's a torch tensor
@@ -60,9 +60,9 @@ def load_network(backend, filename):
     if backend not in backends:
         raise Exception("Supported backends are {}".format(backends))
     if backend == 'tensorflow':
-        from lcztools._leela_tf_net import LeelaLoader
+        from lcztools.backend._leela_tf_net import LeelaLoader
     elif backend == 'pytorch':
-        from lcztools._leela_torch_eval_net import LeelaLoader
+        from lcztools.backend._leela_torch_eval_net import LeelaLoader
     elif backend == 'pytorch_orig':
-        from lcztools._leela_torch_net import LeelaLoader        
+        from lcztools.backend._leela_torch_net import LeelaLoader        
     return LeelaNet(LeelaLoader.from_weights_file(filename))

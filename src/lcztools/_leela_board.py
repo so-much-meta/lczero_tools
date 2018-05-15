@@ -19,7 +19,8 @@ class LeelaBoard(chess.Board):
         self.lcz_stack = []
         self._lcz_transposition_counter = collections.Counter()
         self._lcz_push()
-        self._is_lcz_pushing = True    
+        self._is_lcz_pushing = True
+        self._is_lcz_never_irreversible = False
     def _lcz_push(self):
         # print("_lcz_push")
         # Push data onto the lcz data stack after pushing board moves
@@ -76,9 +77,8 @@ class LeelaBoard(chess.Board):
             _lcz_data = self.lcz_stack.pop()
             self._lcz_transposition_counter.subtract((_lcz_data.transposition_key,))
         return result
-    def features(self):
+    def lcz_features(self):
         '''Get neural network input planes'''
-        # global planes
         planes = []
         curdata = self.lcz_stack[-1]
         for data in self.lcz_stack[-1:-9:-1]:
@@ -114,6 +114,19 @@ class LeelaBoard(chess.Board):
         uci_to_idx_index = (data.us_ooo | data.us_oo) +  2*data.side_to_move
         uci_idx_dct = _uci_to_idx[uci_to_idx_index]
         return [uci_idx_dct[m] for m in uci_list]
+    def lcz_to_board(self):
+        '''Return a python-chess board'''
+        board = chess.Board()
+        # There's certainly faster ways to do this....
+        for move in move_stack:
+            board.push(move)
+        return board
+    def lcz_to_uci_engine_board(self):
+        '''Return a python chess board that is never irreversible
+        as this is needed for lczero engine'''
+        board = self.lcz_to_board()
+        board.is_irreversible = lambda self, move: False
+        return board
     def __repr__(self):
         return "LeelaBoard('{}')".format(self.fen())
     def __str__(self):
