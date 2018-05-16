@@ -1,8 +1,6 @@
 # lczero_tools
 Python utilities for experimenting with leela-chess-zero, a neural network based chess engine: https://github.com/glinscott/leela-chess/
 
-~~**Note/TODO: Policy values for castling are not correct, and don't match lczero. NN encoding for these moves needs to be fixed**~~ - This should be fixed now.
-
 This makes heavy use of python-chess located at https://github.com/niklasf/python-chess
 
 The network may be run with pytorch, or tensorflow (tensorflow implementation currently imports from leela-chess training code)
