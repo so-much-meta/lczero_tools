@@ -35,10 +35,11 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 ```
 
 ## TODO
-1. Implement testing to verify position evaluations match lczero engine.
-   * Mostly done -- see /tests
+1. ~~Implement testing to verify position evaluations match lczero engine.~~
+   * Using /tests/test_net_eq_engine.py, results look good. But specific PGNs might be helpful too.
 2. Add training data parser module. Use cases are:
    * Training data to PGN
+   * Verification of training data correctness.
    * Loss calculation - allow comparison between networks on same data
 3. OpenCL support! This should be possible with https://github.com/plaidml/plaidml
 4. Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine -- in cases where neural network eval speed is the bottleneck.
