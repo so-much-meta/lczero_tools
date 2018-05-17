@@ -14,8 +14,8 @@ LeelaBoardData = collections.namedtuple('LeelaBoardData',
                             'side_to_move rule50_count')
 
 class LeelaBoard(chess.Board):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, fen):
+        super().__init__(fen)
         self.lcz_stack = []
         self._lcz_transposition_counter = collections.Counter()
         self._lcz_push()
@@ -77,7 +77,7 @@ class LeelaBoard(chess.Board):
             _lcz_data = self.lcz_stack.pop()
             self._lcz_transposition_counter.subtract((_lcz_data.transposition_key,))
         return result
-    def lcz_features(self):
+    def lcz_features(self, fake_history=False, no_history=False):
         '''Get neural network input planes'''
         planes = []
         curdata = self.lcz_stack[-1]
@@ -92,6 +92,21 @@ class LeelaBoard(chess.Board):
                 planes.append(data.black_planes[:,::-1])
                 planes.append(data.white_planes[:,::-1])
                 planes.append(data.rep_planes)
+            if no_history:
+                break
+        # Augment with fake history, reusing last data
+        if fake_history:
+            for _ in range(8 - len(self.lcz_stack)):
+                if not curdata.side_to_move:
+                    # We're white
+                    planes.append(data.white_planes)
+                    planes.append(data.black_planes)
+                    planes.append(data.rep_planes)
+                else:
+                    # We're black
+                    planes.append(data.black_planes[:,::-1])
+                    planes.append(data.white_planes[:,::-1])
+                    planes.append(data.rep_planes)
         planes = np.concatenate(planes)
         planes.resize(112,8,8)
         planes[-8] = curdata.us_ooo
@@ -128,7 +143,7 @@ class LeelaBoard(chess.Board):
         return board
     def lcz_to_uci_engine_board(self):
         '''Return a python chess board that is never irreversible
-        as this is needed for lczero engine'''
+        as this is needed for lczero engine/move history'''
         board = self.lcz_to_board()
         board.is_irreversible = lambda move: False
         return board
