@@ -77,10 +77,13 @@ class LeelaBoard(chess.Board):
             _lcz_data = self.lcz_stack.pop()
             self._lcz_transposition_counter.subtract((_lcz_data.transposition_key,))
         return result
-    def lcz_features(self, fake_history=False, no_history=False):
+    def lcz_features(self, fake_history=False, no_history=False, real_history=7, rule50=None, allones=None):
         '''Get neural network input planes'''
         planes = []
         curdata = self.lcz_stack[-1]
+        if no_history:
+            real_history = 0
+        num_filled = 0
         for data in self.lcz_stack[-1:-9:-1]:
             if not curdata.side_to_move:
                 # We're white
@@ -92,11 +95,13 @@ class LeelaBoard(chess.Board):
                 planes.append(data.black_planes[:,::-1])
                 planes.append(data.white_planes[:,::-1])
                 planes.append(data.rep_planes)
-            if no_history:
+            num_filled +=1
+            real_history -= 1
+            if real_history<0:
                 break
         # Augment with fake history, reusing last data
         if fake_history:
-            for _ in range(8 - len(self.lcz_stack)):
+            for _ in range(8 - num_filled):
                 if not curdata.side_to_move:
                     # We're white
                     planes.append(data.white_planes)
@@ -114,9 +119,15 @@ class LeelaBoard(chess.Board):
         planes[-6] = curdata.them_ooo
         planes[-5] = curdata.them_oo
         planes[-4] = curdata.side_to_move
-        planes[-3] = curdata.rule50_count
+        if rule50 is not None:
+            planes[-3] = rule50
+        else:
+            planes[-3] = curdata.rule50_count
         planes[-2] = 0
-        planes[-1] = 1
+        if allones is not None:
+            planes[-1] = allones
+        else:
+            planes[-1] = 1
         return planes
     def lcz_uci_to_idx(self, uci_list):
         # Return list of NN policy output indexes for this board position, given uci_list

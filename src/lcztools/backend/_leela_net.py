@@ -36,8 +36,8 @@ class LeelaNet:
         value = value/2 + 0.5
         return policy_legal, value
 
-    def evaluate(self, leela_board, fake_history=False, no_history=False):
-        features = leela_board.lcz_features(fake_history, no_history)
+    def evaluate(self, leela_board, **feature_args):
+        features = leela_board.lcz_features(**feature_args)
         policy, value = self.model(features)
         if not isinstance(policy, np.ndarray):
             # Assume it's a torch tensor
