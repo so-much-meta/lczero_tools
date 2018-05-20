@@ -13,14 +13,16 @@ LeelaBoardData = collections.namedtuple('LeelaBoardData',
                             'transposition_key us_ooo us_oo them_ooo them_oo '
                             'side_to_move rule50_count')
 
-class LeelaBoard(chess.Board):
+class LeelaBoard:
     def __init__(self, fen):
-        super().__init__(fen)
+        self.pc_board = chess.Board(fen)
         self.lcz_stack = []
         self._lcz_transposition_counter = collections.Counter()
         self._lcz_push()
-        self._is_lcz_pushing = True
-        self._is_lcz_never_irreversible = False
+        self.is_game_over = self.pc_attr('is_game_over')
+    def pc_attr(self, methodname):
+        '''Return attribute of self.pcboard, useful for copying method bindings'''
+        return getattr(self.pc_board, methodname)
     def _lcz_push(self):
         # print("_lcz_push")
         # Push data onto the lcz data stack after pushing board moves
@@ -28,17 +30,17 @@ class LeelaBoard(chess.Board):
         self._lcz_transposition_counter.update((transposition_key,))
         repetitions = self._lcz_transposition_counter[transposition_key] - 1
         # side_to_move = 0 if we're white, 1 if we're black
-        side_to_move = 0 if self.turn else 1
-        rule50_count = self.halfmove_clock
+        side_to_move = 0 if self.pc_board.turn else 1
+        rule50_count = self.pcboard.halfmove_clock
         # Figure out castling rights
         if not side_to_move:
             # we're white
-            _c = self.castling_rights
+            _c = self.pc_board.castling_rights
             us_ooo, us_oo = (_c>>chess.A1) & 1, (_c>>chess.H1) & 1
             them_ooo, them_oo = (_c>>chess.A8) & 1, (_c>>chess.H8) & 1
         else: 
             # We're black
-            _c = self.castling_rights
+            _c = self.pc_board.castling_rights
             us_ooo, us_oo = (_c>>chess.A8) & 1, (_c>>chess.H8) & 1
             them_ooo, them_oo = (_c>>chess.A1) & 1, (_c>>chess.H1) & 1
         # Create 13 planes... 6 us, 6 them, repetitions>=1
@@ -46,7 +48,7 @@ class LeelaBoard(chess.Board):
         black_planes = []
         for color, planes in ((True, white_planes), (False, black_planes)):
             for piece_type in range(1,7):
-                byts = struct.pack('>Q', self.pieces_mask(piece_type, color))
+                byts = struct.pack('>Q', self.pc_board.pieces_mask(piece_type, color))
                 arr = np.unpackbits(bytearray(byts))[::-1].reshape(8,8).astype(np.float32)
                 planes.append(arr)
         # planes.append(flat_planes[repetitions>=1])
@@ -60,22 +62,19 @@ class LeelaBoard(chess.Board):
             side_to_move=side_to_move, rule50_count=rule50_count
         )
         self.lcz_stack.append(lcz_data)
-    def is_game_over(self, *args, **kwargs):
-        if not self._is_lcz_pushing:
-            return super().is_game_over(*args, **kwargs)
-        self._is_lcz_pushing = False
-        result = super().is_game_over(*args, **kwargs)
-        self._is_lcz_pushing = True
-        return result
     def push(self, move):
-        super().push(move)
-        if self._is_lcz_pushing:
-            self._lcz_push()
+        self.pc_board.push(move)
+        self._lcz_push()
+    def push_uci(self, uci):
+        self.pc_board.push_uci(uci)
+        self._lcz_push()        
+    def push_san(self, san):
+        self.pc_board.push_uci(san)
+        self._lcz_push()        
     def pop(self):
-        result = super().pop()
-        if self._is_lcz_pushing:
-            _lcz_data = self.lcz_stack.pop()
-            self._lcz_transposition_counter.subtract((_lcz_data.transposition_key,))
+        result = self.pc_board.pop()
+        _lcz_data = self.lcz_stack.pop()
+        self._lcz_transposition_counter.subtract((_lcz_data.transposition_key,))
         return result
     def lcz_features(self, fake_history=False, no_history=False, real_history=7, rule50=None, allones=None):
         '''Get neural network input planes'''
@@ -145,23 +144,10 @@ class LeelaBoard(chess.Board):
         uci_to_idx_index = (data.us_ooo | data.us_oo) +  2*data.side_to_move
         uci_idx_dct = _uci_to_idx[uci_to_idx_index]
         return [uci_idx_dct[m] for m in uci_list]
-    def lcz_to_board(self):
-        '''Return a python-chess board'''
-        board = chess.Board()
-        # There's certainly faster ways to do this....
-        for move in self.move_stack:
-            board.push(move)
-        return board
-    def lcz_to_uci_engine_board(self):
-        '''Return a python chess board that is never irreversible
-        as this is needed for lczero engine/move history'''
-        board = self.lcz_to_board()
-        board.is_irreversible = lambda move: False
-        return board
     def __repr__(self):
-        return "LeelaBoard('{}')".format(self.fen())
+        return "LeelaBoard('{}')".format(self.pc_board.fen())
     def __str__(self):
-        boardstr = super().__str__() + \
+        boardstr = self.pc_board.__str__() + \
                 '\nTurn: {}'.format('White' if self.turn else 'Black')
         return boardstr
 

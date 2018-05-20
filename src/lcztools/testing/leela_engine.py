@@ -6,11 +6,10 @@
 
 
 import chess.uci
-import chess
+from lcztools import LeelaBoard
 from collections import namedtuple, OrderedDict
 import re
 from operator import itemgetter
-import sys
 
 
 
@@ -85,10 +84,11 @@ class LCZEngine:
         '''returns a (policy, value) given a python-chess board where:
         policy is a mapping UCI=>value, sorted highest to lowest
         value is a float'''
+        if isinstance(board, LeelaBoard):
+            board = board.pc_board
         self.info_handler.lcz_clear()
         self.engine.position(board)
         self.engine.go(nodes=self.nodes)
-        san_to_uci = {}
         value = None
         policy = {}
         for move in board.legal_moves:
