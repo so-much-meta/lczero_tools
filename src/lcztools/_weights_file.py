@@ -1,5 +1,9 @@
 import gzip
 
+# Note: Weight loading code taken from
+# https://github.com/glinscott/leela-chess/blob/master/training/tf/net_to_model.py
+
+
 LEELA_WEIGHTS_VERSION = '2'
 
 def read_weights_file(filename):
