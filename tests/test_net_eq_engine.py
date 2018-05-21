@@ -7,21 +7,23 @@ If no exception is thrown, it has passed
 
 import os
 import sys
-sys.path.append(os.path.expanduser('~/git/lczero_tools/src/'))
 import lcztools
 from lcztools.testing.leela_engine import LCZEngine
 import numpy as np
 import chess.pgn
 import time
+import json
+import collections
 
 
-engine_path = os.path.expanduser('~/git/leela-chess/release/lczero')
-weights_file = os.path.expanduser('~/git/leela-chess/release/weights.txt.gz')
-engine = LCZEngine(engine_path, weights_file)
+engine = LCZEngine()
 board = lcztools.LeelaBoard()
-engine.evaluate(board.lcz_to_uci_engine_board())
-net = lcztools.load_network('pytorch', weights_file)
+# engine.evaluate(board())
+net = lcztools.load_network()
 
+def fix_policy_float(policy):
+    '''Numpy to normal python float, for json dumps'''
+    return collections.OrderedDict((k, float(v)) for k, v in policy.items())
 
 def eval_equal(neteval, engineeval, tolerance=.00006):
     npol, nv = neteval
@@ -50,14 +52,19 @@ for gamenum in range(numgames):
         policy, value = net.evaluate(board)
         net_eval_time += time.time() - clock
         
-        engine_board = board.lcz_to_uci_engine_board()
         clock = time.time()
-        epolicy, evalue = engine.evaluate(engine_board)
+        bestmove, epolicy, evalue = engine.evaluate(board)
         engine_eval_time += time.time() - clock
         
         totalevals += 1
         
         if not eval_equal((policy, value), (epolicy, evalue)):
+            print("Note equal...")
+            print("Policy:", json.dumps(fix_policy_float(policy), indent=3))
+            print("Value:", value)
+            print("Engine Bestmove:", bestmove)
+            print("Engine Policy:", json.dumps(epolicy, indent=3))
+            print("Engine Value:", evalue)
             raise Exception("Not equal:", ' '.join(m.uci() for m in board.move_stack))
         ucis = list(policy)
         pol_values = np.fromiter(policy.values(), dtype=np.float32)
@@ -66,7 +73,7 @@ for gamenum in range(numgames):
         uci = ucis[pol_index]
         board.push_uci(uci)
     print()
-    game = chess.pgn.Game.from_board(board.lcz_to_board())
+    game = chess.pgn.Game.from_board(board.pc_board)
     print(game)
     print(board)
     print("Average net eval time   : {:.6f}".format(net_eval_time/totalevals))

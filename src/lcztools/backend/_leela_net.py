@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 
-
+from lcztools.config import get_global_config
 from collections import OrderedDict
 
 def _softmax(x):
@@ -11,6 +11,7 @@ def _softmax(x):
 class LeelaNet:
     def __init__(self, model):
         self.model = model
+    
     def evaluate_batch(self, leela_boards):
         # TODO/Not implemented
         raise NotImplementedError
@@ -35,7 +36,7 @@ class LeelaNet:
             policy_legal = OrderedDict()
         value = value/2 + 0.5
         return policy_legal, value
-
+    
     def evaluate(self, leela_board):
         features = leela_board.lcz_features()
         policy, value = self.model(features)
@@ -57,10 +58,39 @@ class LeelaNet:
             policy_legal = OrderedDict()
         value = value/2 + 0.5
         return policy_legal, value
+    
+    def evaluate_debug(self, leela_board, **kwargs):
+        '''Same as evaluate, but allows debug kwargs.
+        See LeelaBoard.lcz_features_debug'''
+        features = leela_board.lcz_features(**kwargs)
+        policy, value = self.model(features)
+        if not isinstance(policy, np.ndarray):
+            # Assume it's a torch tensor
+            policy = policy.cpu().numpy()
+            value = value.cpu().numpy()
+        policy, value = policy[0], value[0][0]
+        # Knight promotions are represented without a suffix in leela-chess
+        # ==> the transformation is done in lcz_uci_to_idx
+        legal_uci = [m.uci() for m in leela_board.generate_legal_moves()]
+        if legal_uci:
+            legal_indexes = leela_board.lcz_uci_to_idx(legal_uci)
+            softmaxed = _softmax(policy[legal_indexes])
+            policy_legal = OrderedDict(sorted(zip(legal_uci, softmaxed),
+                                        key = lambda mp: (mp[1], mp[0]),
+                                        reverse=True))
+        else:
+            policy_legal = OrderedDict()
+        value = value/2 + 0.5
+        return policy_legal, value    
 
+def list_backends():
+    return ['pytorch', 'pytorch_cuda', 'pytorch_orig', 'tensorflow']
 
-def load_network(backend, filename):
-    backends = ('tensorflow', 'pytorch', 'pytorch_orig', 'pytorch_cuda')
+def load_network(backend=None, filename=None):
+    config = get_global_config()
+    backend = backend or config.backend
+    filename = config.get_weights_filename(filename)
+    backends = list_backends()
     if backend not in backends:
         raise Exception("Supported backends are {}".format(backends))
     kwargs = {}

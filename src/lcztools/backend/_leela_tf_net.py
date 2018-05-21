@@ -9,7 +9,11 @@ import sys
 import yaml
 import textwrap
 import gzip
+from lcztools.config import get_global_config
 
+# TODO: Hack!!! (This whole file is a hack)
+config = get_global_config()
+sys.path.append(os.path.expanduser(config.leela_training_tf_dir))
 
 import tfprocess
 import tarfile

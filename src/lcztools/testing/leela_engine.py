@@ -6,11 +6,12 @@
 
 
 import chess.uci
-import chess
+from lcztools import LeelaBoard
 from collections import namedtuple, OrderedDict
 import re
 from operator import itemgetter
-import sys
+from lcztools.config import get_global_config
+import os
 
 
 
@@ -47,28 +48,38 @@ class LCZInfoHandler(chess.uci.InfoHandler):
         self.lcz_move_info.clear()
 
 class LCZEngine:
-    def __init__(self, engine_path, weights_file, threads=1, visits=1, nodes=1, start=True, stderr='lczero.stderr.txt'):
-        self.engine_path = engine_path
-        self.weights_file = weights_file
+    def __init__(self, engine_path=None, weights_file=None,
+                 threads=1, visits=1, nodes=1, start=True,
+                 logfile='lczero_log.txt', stderr='lczero.stderr.txt',
+                 ):
+        config = get_global_config()
+        engine_path = engine_path or config.lczero_engine
+        engine_path = os.path.expanduser(engine_path)
+        self.engine_path = engine_path 
+        self.weights_file = config.get_weights_filename(weights_file)
         self.threads = threads
         self.visits = visits
         self.nodes = nodes
         self.info_handler = LCZInfoHandler()
         self.engine = None
+        self.logfile = logfile
         self.stderrfile = stderr
         self.stderr = None
         if start:
             self.start()
     def start(self):
-        print("Outputting lczero stderr to:", self.stderrfile)
+        print("lczero outputting stderr to:", self.stderrfile)
         self.stderr = open(self.stderrfile, 'w')
         command = [self.engine_path]
-        command.extend(['-w', self.weights_file])
+        weights_file = os.path.expanduser(self.weights_file)
+        command.extend(['-w', weights_file])
         if self.threads is not None:
             command.extend(['-t', self.threads])
         if self.visits is not None:
             command.extend(['-v', self.visits])
-        command.extend(['-l', '/tmp/lczlog.txt'])            
+        if self.logfile:
+            print("lczero logging to: {}".format(self.logfile))
+            command.extend(['-l', self.logfile])            
         command = map(str, command)
         self.nodes = self.nodes
         self.engine = chess.uci.popen_engine(command, stderr=self.stderr)
@@ -82,13 +93,20 @@ class LCZEngine:
         except:
             pass
     def evaluate(self, board):
-        '''returns a (policy, value) given a python-chess board where:
+        '''returns a (bestmove, policy, value) tuple given a python-chess board where:
         policy is a mapping UCI=>value, sorted highest to lowest
         value is a float'''
+        if isinstance(board, LeelaBoard):
+            board = board.pc_board
+        
+        # Note/Important - this 'is_reversible' fix is needed to make sure that the engine
+        # gets all history when calling self.engine.position(board)
+        board = board.copy()
+        board.is_irreversible = lambda move: False
+            
         self.info_handler.lcz_clear()
         self.engine.position(board)
-        self.engine.go(nodes=self.nodes)
-        san_to_uci = {}
+        bestmove = self.engine.go(nodes=self.nodes)
         value = None
         policy = {}
         for move in board.legal_moves:
@@ -104,4 +122,4 @@ class LCZEngine:
             #  Necessary???   uci = move.uci().rstrip('n')
             uci = move.uci()
             policy[uci] = move_info.policy
-        return OrderedDict(sorted(policy.items(), key=itemgetter(1), reverse=True)), value
+        return bestmove, OrderedDict(sorted(policy.items(), key=itemgetter(1), reverse=True)), value

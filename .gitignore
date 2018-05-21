@@ -5,3 +5,6 @@ __pycache__
 *.pyc
 *.egg-info/
 lczero.stderr.txt
+.ipynb_checkpoints
+lczero_log.txt
+lczero.stderr.txt
