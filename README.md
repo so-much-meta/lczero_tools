@@ -5,7 +5,7 @@ This makes heavy use of python-chess located at https://github.com/niklasf/pytho
 
 The network may be run with pytorch, or tensorflow (tensorflow implementation currently imports from leela-chess training code)
 
-For now, the following is possible (also see /tests/*.py):
+For now, the following is possible (also see /tests/*.py and [Examples.ipynb](https://github.com/so-much-meta/lczero_tools/blob/master/notebooks/Examples.ipynb)):
 ```
 >>> from lcztools import load_network, LeelaBoard
 >>> net = load_network('pytorch', 'weights.txt.gz')
