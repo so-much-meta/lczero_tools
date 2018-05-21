@@ -32,6 +32,15 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 0.4715215042233467
 ```
 
+## INSTALL
+```
+git clone https://github.com/so-much-meta/lczero_tools
+cd lczero_tools
+pip install .
+# Or for developer/editable install, to make in place changes:
+# pip install -e .
+```
+
 ## TODO
 1. ~~Implement testing to verify position evaluations match lczero engine.~~
    * Using /tests/test_net_eq_engine.py, results look good. But specific PGNs might be helpful too.
