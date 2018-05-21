@@ -1,11 +1,12 @@
 # lczero_tools
 Python utilities for experimenting with leela-chess-zero, a neural network based chess engine: https://github.com/glinscott/leela-chess/
+* Note: This is primarily for looking at the neural network itself, outside of search/MCTS (although search may be added eventually).
 
 This makes heavy use of python-chess located at https://github.com/niklasf/python-chess
 
 The network may be run with pytorch, or tensorflow (tensorflow implementation currently imports from leela-chess training code)
 
-For now, the following is possible (also see /tests/*.py):
+For now, the following is possible (also see /tests/*.py and [Examples.ipynb](https://github.com/so-much-meta/lczero_tools/blob/master/notebooks/Examples.ipynb)):
 ```
 >>> from lcztools import load_network, LeelaBoard
 >>> net = load_network('pytorch', 'weights.txt.gz')
@@ -32,16 +33,28 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 0.4715215042233467
 ```
 
+## INSTALL
+```
+git clone https://github.com/so-much-meta/lczero_tools
+cd lczero_tools
+# Note: Creating and using a virtualenv or Conda environment before install is suggested, as always
+pip install .
+# Or for developer/editable install, to make in place changes:
+# pip install -e .
+```
+
 ## TODO
 1. ~~Implement testing to verify position evaluations match lczero engine.~~
    * Using /tests/test_net_eq_engine.py, results look good. But specific PGNs might be helpful too.
-2. Add training data parser module. Use cases are:
+2. ~~Add config mechanism and Jupyter notebook examples~~
+3. Add training data parser module. Use cases are:
    * Training data to PGN
    * Verification of training data correctness.
    * Loss calculation - allow comparison between networks on same data
-3. OpenCL support! This should be possible with https://github.com/plaidml/plaidml
-4. Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine -- in cases where neural network eval speed is the bottleneck.
+4. OpenCL support! This should be possible with https://github.com/plaidml/plaidml
+5. Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine -- in cases where neural network eval speed is the bottleneck.
    * However, no optimizations should get (too much) in the way of clarity or ease of changing code to do experiments.
+6. Possible MCTS implementation
 
 Note: In order to make this work with tensorflow CPU-only mode using leela-chess tfprocess, changes had to be made for dimension ordering of the input (most likely this change slows things down a lot)...
 ```
