@@ -36,6 +36,7 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 ```
 git clone https://github.com/so-much-meta/lczero_tools
 cd lczero_tools
+# Note: Creating and using a virtualenv or Conda environment before install is suggested, as always
 pip install .
 # Or for developer/editable install, to make in place changes:
 # pip install -e .
