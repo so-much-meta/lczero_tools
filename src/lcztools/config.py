@@ -61,6 +61,8 @@ def find_config_file():
     fname = os.path.join(dirname, filename)
     if os.path.isfile(fname):
         return fname
+    # No config file found..
+    return None
 
 
 def set_global_config(filename=None, section='default'):
@@ -71,6 +73,7 @@ def set_global_config(filename=None, section='default'):
     if filename is None:
         # Empty config
         _global_config = LCZToolsConfig()
+        return
     config = configparser.ConfigParser()
     config.read(filename)
     _global_config = LCZToolsConfig(config[section])
