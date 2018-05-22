@@ -6,7 +6,7 @@ import zlib, base64
 import numpy as np
 import math
 
-from lcztools._weights_file import read_weights_file
+from lcztools.weights import read_weights_file
 
 # This pytorch implementation slightly optimizes the original by using a simplified "Normalization" layer instead
 # of BatchNorm2d, with precalculated normalization/variance divisors: w = 1/torch.sqrt(w + 1e-5).

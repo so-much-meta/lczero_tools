@@ -19,7 +19,7 @@ import tfprocess
 import tarfile
 import numpy as np
 
-from lcztools._weights_file import read_weights_file
+from lcztools.weights import read_weights_file
 
 YAMLCFG = """
 %YAML 1.2

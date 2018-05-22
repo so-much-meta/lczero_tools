@@ -5,7 +5,7 @@ import gzip
 import zlib, base64
 import numpy as np
 
-from lcztools._weights_file import read_weights_file
+from lcztools.weights import read_weights_file
 
 
 class ConvBlock(nn.Module):
