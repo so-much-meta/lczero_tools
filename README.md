@@ -54,7 +54,7 @@ pip install .
 4. [ ] OpenCL support! This should be possible with https://github.com/plaidml/plaidml
 5. [ ] Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine -- in cases where neural network eval speed is the bottleneck.
    * [ ] However, no optimizations should get (too much) in the way of clarity or ease of changing code to do experiments.
-6 [ ] Possible MCTS implementation
+6. [ ] Possible MCTS implementation
 
 Note: In order to make this work with tensorflow CPU-only mode using leela-chess tfprocess, changes had to be made for dimension ordering of the input (most likely this change slows things down a lot)...
 ```
