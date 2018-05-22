@@ -62,7 +62,7 @@ class LeelaNet:
     def evaluate_debug(self, leela_board, **kwargs):
         '''Same as evaluate, but allows debug kwargs.
         See LeelaBoard.lcz_features_debug'''
-        features = leela_board.lcz_features(**kwargs)
+        features = leela_board.lcz_features_debug(**kwargs)
         policy, value = self.model(features)
         if not isinstance(policy, np.ndarray):
             # Assume it's a torch tensor
@@ -86,7 +86,7 @@ class LeelaNet:
 def list_backends():
     return ['pytorch', 'pytorch_cuda', 'pytorch_orig', 'tensorflow']
 
-def load_network(backend=None, filename=None):
+def load_network(filename=None, backend=None):
     config = get_global_config()
     backend = backend or config.backend
     filename = config.get_weights_filename(filename)

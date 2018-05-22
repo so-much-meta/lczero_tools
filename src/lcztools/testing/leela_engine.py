@@ -47,7 +47,7 @@ class LCZInfoHandler(chess.uci.InfoHandler):
         self.lcz_strings.clear()
         self.lcz_move_info.clear()
 
-class LCZEngine:
+class LCZeroEngine:
     def __init__(self, engine_path=None, weights_file=None,
                  threads=1, visits=1, nodes=1, start=True,
                  logfile='lczero_log.txt', stderr='lczero.stderr.txt',

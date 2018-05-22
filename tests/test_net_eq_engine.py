@@ -8,7 +8,7 @@ If no exception is thrown, it has passed
 import os
 import sys
 import lcztools
-from lcztools.testing.leela_engine import LCZEngine
+from lcztools.testing.leela_engine import LCZeroEngine
 import numpy as np
 import chess.pgn
 import time
@@ -16,7 +16,7 @@ import json
 import collections
 
 
-engine = LCZEngine()
+engine = LCZeroEngine()
 board = lcztools.LeelaBoard()
 # engine.evaluate(board())
 net = lcztools.load_network()
