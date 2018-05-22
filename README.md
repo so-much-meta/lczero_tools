@@ -44,17 +44,17 @@ pip install .
 ```
 
 ## TODO
-1. ~~Implement testing to verify position evaluations match lczero engine.~~
-   * Using /tests/test_net_eq_engine.py, results look good. But specific PGNs might be helpful too.
-2. ~~Add config mechanism and Jupyter notebook examples~~
-3. Add training data parser module. Use cases are:
-   * Training data to PGN
-   * Verification of training data correctness.
-   * Loss calculation - allow comparison between networks on same data
-4. OpenCL support! This should be possible with https://github.com/plaidml/plaidml
-5. Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine -- in cases where neural network eval speed is the bottleneck.
-   * However, no optimizations should get (too much) in the way of clarity or ease of changing code to do experiments.
-6. Possible MCTS implementation
+1. [x] Implement testing to verify position evaluations match lczero engine.
+   * [ ] Using /tests/test_net_eq_engine.py, results look good. But specific PGNs might be helpful too.
+2. [x] Add config mechanism and Jupyter notebook examples
+3. [ ] Add training data parser module. Use cases are:
+   * [ ] Training data to PGN
+   * [ ] Verification of training data correctness.
+   * [ ] Loss calculation - allow comparison between networks on same data
+4. [ ] OpenCL support! This should be possible with https://github.com/plaidml/plaidml
+5. [ ] Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine -- in cases where neural network eval speed is the bottleneck.
+   * [ ] However, no optimizations should get (too much) in the way of clarity or ease of changing code to do experiments.
+6 [ ] Possible MCTS implementation
 
 Note: In order to make this work with tensorflow CPU-only mode using leela-chess tfprocess, changes had to be made for dimension ordering of the input (most likely this change slows things down a lot)...
 ```
