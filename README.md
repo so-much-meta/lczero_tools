@@ -1,16 +1,19 @@
 # lczero_tools
-Python utilities for experimenting with leela-chess-zero, a neural network based chess engine: https://github.com/glinscott/leela-chess/
-* Note: This is primarily for looking at the neural network itself, outside of search/MCTS (although search may be added eventually).
+Python utilities for experimenting with Leela Chess Zero a neural network based chess engine: https://github.com/glinscott/leela-chess/
+
+#### Note: This is primarily for looking at the Leela Chess neural network itself, outside of search/MCTS (although search may be added eventually).
 
 This makes heavy use of python-chess located at https://github.com/niklasf/python-chess
 
-The network may be run with pytorch, or tensorflow (tensorflow implementation currently imports from leela-chess training code)
+The current implementation is primarily geared towards pytorch, but tensorflow is possible using the training/tf portion of leela-chess.
 
-For now, the following is possible (also see /tests/*.py and [Examples.ipynb](https://github.com/so-much-meta/lczero_tools/blob/master/notebooks/Examples.ipynb)):
-```
+Example usage (also see /tests/*.py and [Examples.ipynb](https://github.com/so-much-meta/lczero_tools/blob/master/notebooks/Examples.ipynb)):
+```python
 >>> from lcztools import load_network, LeelaBoard
+>>> # Note: use pytorch_cuda for cuda support
 >>> net = load_network('pytorch', 'weights.txt.gz')
 >>> board = LeelaBoard()
+>>> # Many of Python-chess's methods are passed through, along with board representation
 >>> board.push_uci('e2e4')
 >>> print(board)
 r n b q k b n r
