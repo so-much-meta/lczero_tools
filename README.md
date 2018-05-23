@@ -1,4 +1,4 @@
-# lczero_tools
+# lczero-tools
 Python utilities for experimenting with Leela Chess Zero a neural network based chess engine: https://github.com/glinscott/leela-chess/
 
 #### Note: This is primarily for looking at the Leela Chess neural network itself, outside of search/MCTS (although search may be added eventually).
