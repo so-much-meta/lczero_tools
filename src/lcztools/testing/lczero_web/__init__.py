@@ -1,2 +1,2 @@
-from .match_game import WebMatchGame
+from .web_game import WebMatchGame, WebTrainingGame
 from .networks import WeightsDownloader

@@ -7,15 +7,13 @@ from lcztools.util import lazy_property
 import chess
 import chess.pgn
 
-class WebMatchGame:
-    BASE_URL = 'http://www.lczero.org/match_game'
+class WebGame:
     def __init__(self, url):
         '''Create a web match game object.
         
         URL may be the full URL, such as 'http://www.lczero.org/match_game/298660'
         or just a portion, like '298660'. Only the last portion is used'''
-        url = url.rstrip('/').rsplit('/', 1)[-1]
-        self.url = posixpath.join(self.BASE_URL, url)
+        self.url = url
 
     @lazy_property
     def text(self):
@@ -28,9 +26,10 @@ class WebMatchGame:
     @lazy_property
     def movelist(self):
         movelist = re.search(r"pgnString: '(.*)'", self.text).group(1) \
-            .replace(r'\n', '') \
+            .replace(r'\n', ' ') \
             .replace(r'\x2b', '+') \
             .replace(r'.', '. ') \
+            .strip() \
             .split()
         return movelist        
     
@@ -83,6 +82,22 @@ class WebMatchGame:
                 board.push_san(san)
         return board
     
+class WebMatchGame(WebGame):
+    BASE_URL = 'http://www.lczero.org/match_game'
+    def __init__(self, url):
+        '''Create a web match game object.
         
+        URL may be the full URL, such as 'http://www.lczero.org/match_game/298660'
+        or just a portion, like '298660'. Only the last portion is used'''
+        url = url.rstrip('/').rsplit('/', 1)[-1]
+        super().__init__(posixpath.join(self.BASE_URL, url))
     
+class WebTrainingGame(WebGame):
+    BASE_URL = 'http://www.lczero.org/game'
+    def __init__(self, url):
+        '''Create a web match game object.
         
+        URL may be the full URL, such as 'http://www.lczero.org/game/298660'
+        or just a portion, like '298660'. Only the last portion is used'''
+        url = url.rstrip('/').rsplit('/', 1)[-1]
+        super().__init__(posixpath.join(self.BASE_URL, url))       
