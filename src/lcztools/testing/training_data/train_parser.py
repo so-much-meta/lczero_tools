@@ -276,7 +276,12 @@ class TarTrainingFile:
             filename = os.path.join(dirname, basename)
         assert(os.path.abspath(self.filename) != os.path.abspath(filename))
         with open(filename, 'w') as pgn_file:
+            first = True
             for game in progress(self):
+                if not first:
+                    pgn_file.write('\n\n')
+                    first = True
                 pgn = game.get_pgn()
                 pgn_file.write(pgn)
+                pgn_file.write('\n')
                 pgn_file.flush()
