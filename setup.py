@@ -14,7 +14,7 @@ setuptools.setup(
         'tf': ['tensorflow'],
         'tf-gpu': ['tensorflow-gpu'],
         'torch': ['torch'],
-        'util': ['tqdm', 'requests', 'BeautifulSoup4'],
+        'util': ['tqdm', 'requests', 'BeautifulSoup4', 'fire'],
     },
     setup_requires=[],
     tests_require=[],
