@@ -38,6 +38,12 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 
 ## INSTALL
 ```
+# With both torch and util dependencies for NN evaluation
+pip install git+https://github.com/so-much-meta/lczero_tools.git#egg=lczero-tools[torch,util]
+# Or just util extras (parse training games, run lczero engine, etc)
+pip install git+https://github.com/so-much-meta/lczero_tools.git#egg=lczero-tools[util]
+
+
 git clone https://github.com/so-much-meta/lczero_tools
 cd lczero_tools
 # Note: Creating and using a virtualenv or Conda environment before install is suggested, as always
@@ -50,8 +56,8 @@ pip install .
 1. [x] Implement testing to verify position evaluations match lczero engine.
    * [ ] Using /tests/test_net_eq_engine.py, results look good. But specific PGNs might be helpful too.
 2. [x] Add config mechanism and Jupyter notebook examples
-3. [ ] Add training data parser module. Use cases are:
-   * [ ] Training data to PGN
+3. [x] Add training data parser module. Use cases are:
+   * [x] Training data to PGN
    * [ ] Verification of training data correctness.
    * [ ] Loss calculation - allow comparison between networks on same data
 4. [ ] OpenCL support! This should be possible with https://github.com/plaidml/plaidml
