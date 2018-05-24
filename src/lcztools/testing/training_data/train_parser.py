@@ -103,10 +103,11 @@ class TrainingGame:
     '''Parse training data bytes'''
     RECORD_SIZE = 8276
     
-    def __init__(self, databytes):
+    def __init__(self, databytes, name):
         s = self.RECORD_SIZE
         self.records = [TrainingRecord(databytes[i:i+s]) for i in range(0, len(databytes),s)]
-        self._cache = {}    
+        self._cache = {}
+        self.name = name
     
     def push_final_move(self, pc_board):
         '''Push the most likely final move, given python chess board and results in final record'''
@@ -155,7 +156,7 @@ class TrainingGame:
                         break
                     pc_board.pop()
             else:
-                print("Error - no final move found!")
+                print("Error ({}) - no final move found!".format(self.name))
 
     def get_move(self, move_index):
         '''Get UCI move, appropriately flipped from piece plane comparison
@@ -246,6 +247,17 @@ class TrainingGame:
             return str(self._cache[cache_key])
         pc_board = self.get_pc_board(with_final_move)
         pgn_game = chess.pgn.Game.from_board(pc_board)
+        white_result = self.records[0].result
+        pgn_game.headers["Event"] = self.name
+        if white_result==1:
+            pgn_game.headers["Result"] = "1-0"
+        elif white_result==-1:
+            pgn_game.headers["Result"] = "0-1"
+        elif white_result==0:
+            pgn_game.headers["Result"] = "1/2-1/2"
+        else:
+            print(white_result)
+            raise Exception("Bad result")
         self._cache[cache_key] = pgn_game
         return str(pgn_game)
     
@@ -261,7 +273,7 @@ class TarTrainingFile:
             with tarfile.open(self.filename) as f:
                 for idx, member in enumerate(f):
                     databytes = f.extractfile(member).read()
-                    yield TrainingGame(databytes)
+                    yield TrainingGame(databytes, member.name)
         return generator()
     
     def to_pgn(self, filename=None, progress=True):
@@ -280,7 +292,7 @@ class TarTrainingFile:
             for game in progress(self):
                 if not first:
                     pgn_file.write('\n\n')
-                    first = True
+                first = False
                 pgn = game.get_pgn()
                 pgn_file.write(pgn)
                 pgn_file.write('\n')
