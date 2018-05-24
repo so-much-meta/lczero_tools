@@ -280,14 +280,3 @@ class TarTrainingFile:
                 pgn = game.get_pgn()
                 pgn_file.write(pgn)
                 pgn_file.flush()
-
-# 
-# 
-# for game_index, game in enumerate(TarTrainingFile('./games14280000.tar.gz')):
-#     if game_index%50 == 0:
-#         print()
-#         print(f'{game_index:5}: ', end='')
-#     print('.',end='')
-#     for move_index, (piece, uci) in enumerate(game.get_all_moves()):
-#         # assert (game.records[move_index].get_probabilities()[uci.rstrip('n')] > 0)
-#         pass
