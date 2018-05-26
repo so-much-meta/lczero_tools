@@ -8,7 +8,7 @@ import struct
 import chess
 import chess.pgn
 import os
-from lcztools.util import tqdm
+from lcztools.util import tqdm, lazy_property
 
 try:
     from lcztools._uci_to_idx import uci_to_idx as _uci_to_idx
@@ -276,6 +276,26 @@ class TarTrainingFile:
                     yield TrainingGame(databytes, member.name)
         return generator()
     
+    @lazy_property
+    def archive_names(self):
+        '''Read all the names from the training archive'''
+        with tarfile.open(self.filename) as f:
+            return f.getnames()
+    
+    def read_game(self, name):
+        '''Read a single game from the archive'''
+        name = str(name)
+        names = self.archive_names
+        with tarfile.open(self.filename) as f:
+            # Search for any names that contain name
+            names = [n for n in names if name in n]
+            if len(names)==0:
+                raise Exception("{} not found in {}".format(name, self.filename))
+            elif len(names)>1:
+                raise Exception("Multiple occurrences of {} found in {}".format(name, self.filename))
+            databytes = f.extractfile(names[0]).read()
+            return TrainingGame(databytes, names[0])
+    
     def to_pgn(self, filename=None, progress=True):
         if progress:
             progress = tqdm
@@ -288,12 +308,8 @@ class TarTrainingFile:
             filename = os.path.join(dirname, basename)
         assert(os.path.abspath(self.filename) != os.path.abspath(filename))
         with open(filename, 'w') as pgn_file:
-            first = True
             for game in progress(self):
-                if not first:
-                    pgn_file.write('\n\n')
-                first = False
                 pgn = game.get_pgn()
                 pgn_file.write(pgn)
-                pgn_file.write('\n')
+                pgn_file.write('\n\n\n')
                 pgn_file.flush()

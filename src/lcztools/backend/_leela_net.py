@@ -87,9 +87,9 @@ def list_backends():
     return ['pytorch', 'pytorch_cuda', 'pytorch_orig', 'tensorflow']
 
 def load_network(filename=None, backend=None):
+    # Config will handle filename in read_weights_file
     config = get_global_config()
     backend = backend or config.backend
-    filename = config.get_weights_filename(filename)
     backends = list_backends()
     if backend not in backends:
         raise Exception("Supported backends are {}".format(backends))

@@ -3,4 +3,4 @@ import importlib
 if importlib.find_loader('requests'):
     from .lczero_web import WebMatchGame
     from .lczero_web import WeightsDownloader
-from .training_data import TarTrainingFile
+from .train_parser import TarTrainingFile

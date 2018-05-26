@@ -1,5 +1,6 @@
 import gzip
 import os
+from lcztools.config import get_global_config
 
 # Note: Weight loading code taken from
 # https://github.com/glinscott/leela-chess/blob/master/training/tf/net_to_model.py
@@ -8,6 +9,8 @@ import os
 LEELA_WEIGHTS_VERSION = '2'
 
 def read_weights_file(filename):
+    config = get_global_config()
+    filename = config.get_weights_filename(filename)
     filename = os.path.expanduser(filename)
     if '.gz' in filename:
         opener = gzip.open
