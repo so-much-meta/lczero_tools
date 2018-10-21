@@ -15,7 +15,7 @@ def json_default(obj):
     raise TypeError
 
 print("Test pytorch")
-lcz_net = lcztools.load_network(backend='pytorch')
+lcz_net = lcztools.load_network()
 lcz_board = lcztools.LeelaBoard()
 print(lcz_board)
 policy, value = lcz_net.evaluate(lcz_board)
