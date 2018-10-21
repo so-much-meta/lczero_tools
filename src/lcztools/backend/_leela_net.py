@@ -91,6 +91,7 @@ def load_network(filename=None, backend=None):
     config = get_global_config()
     backend = backend or config.backend
     backends = list_backends()
+    print("Loading network using backend {}".format(backend))
     if backend not in backends:
         raise Exception("Supported backends are {}".format(backends))
     kwargs = {}

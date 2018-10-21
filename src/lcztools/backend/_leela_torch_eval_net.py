@@ -19,11 +19,11 @@ class Normalization(nn.Module):
     def __init__(self, channels):
         super().__init__()
         self.channels = channels
-        self.mean = nn.Parameter(torch.Tensor(channels))        
+        self.mean = nn.Parameter(torch.Tensor(channels))
         self.stddiv = nn.Parameter(torch.Tensor(channels))
 
     def forward(self, x):
-        return (x - self.mean.unsqueeze(1).unsqueeze(2)) * self.stddiv.unsqueeze(1).unsqueeze(2)
+        return x.sub_(self.mean.unsqueeze(1).unsqueeze(2)).mul_(self.stddiv.unsqueeze(1).unsqueeze(2))
 
     def extra_repr(self):
         return 'channels={}'.format(
@@ -37,20 +37,23 @@ class ConvBlock(nn.Module):
         if output_channels is None:
             output_channels = input_channels
         padding = kernel_size // 2
-        self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size, stride=1, padding=padding, bias=False)
+        self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size, stride=1, padding=padding, bias=True)
         self.conv1_bn = Normalization(output_channels)
+
     def forward(self, x):
         out = self.conv1_bn(self.conv1(x))
         out = F.relu(out, inplace=True)
         return out
-    
+
+
 class ResidualBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()
-        self.conv1 = nn.Conv2d(channels, channels, 3, stride=1, padding=1, bias=False)
+        self.conv1 = nn.Conv2d(channels, channels, 3, stride=1, padding=1, bias=True)
         self.conv1_bn = Normalization(channels)
-        self.conv2 = nn.Conv2d(channels, channels, 3, stride=1, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(channels, channels, 3, stride=1, padding=1, bias=True)
         self.conv2_bn = Normalization(channels)
+
     def forward(self, x):
         out = self.conv1_bn(self.conv1(x))
         out = F.relu(out, inplace=True)
@@ -58,6 +61,7 @@ class ResidualBlock(nn.Module):
         out += x
         out = F.relu(out, inplace=True)
         return out
+
 
 class LeelaModel(nn.Module):
     def __init__(self, channels, blocks):
@@ -80,13 +84,14 @@ class LeelaModel(nn.Module):
                                  output_channels=32)
         self.affine_val_1 = nn.Linear(32*8*8, 128)
         self.affine_val_2 = nn.Linear(128, 1)
+
     def forward(self, x):
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x)
             if next(self.parameters()).is_cuda:
                 x = x.cuda()
-
-        x = x.view(-1, 112, 8, 8)
+        if x.ndimension() == 3:
+            x = x.unsqueeze(0)
         out = self.conv_in(x)
         for block in self.residual_blocks:
             out = block(out)
@@ -94,15 +99,17 @@ class LeelaModel(nn.Module):
         out_pol = self.affine_pol(out_pol)
         out_val = self.conv_val(out).view(-1, 32*8*8)
         out_val = F.relu(self.affine_val_1(out_val), inplace=True)
-        out_val = F.tanh(self.affine_val_2(out_val))
+        out_val = self.affine_val_2(out_val).tanh()
         return out_pol, out_val
     
+
 class LeelaLoader:
     @staticmethod
     def from_weights_file(filename, train=False, cuda=False):
         filters, blocks, weights = read_weights_file(filename)
         net = LeelaModel(filters, blocks)
         if cuda:
+            print("Enabling CUDA!")
             net.cuda()
         if not train:
             net.eval()
@@ -115,31 +122,12 @@ class LeelaLoader:
                 param = getattr(module, typ, None)
                 if param is not None:
                     parameters.append((module_name, class_name, typ, param))
-        param_idx = 0
-        # The unused_bias variable is set each time a convolution is seen; the following bias
-        # parameter is not used.
-        unused_bias = False
         for i, w in enumerate(weights):
             w = torch.Tensor(w)
-            if unused_bias: # ((w**2).mean()==0):
-                # print(f"{tuple(w.size())} -- Unused bias")
-                unused_bias = False
-                continue
-            module_name, class_name, typ, param = parameters[param_idx]
+            module_name, class_name, typ, param = parameters[i]
             # print(f"{tuple(w.size())} -- {module_name} - {class_name} - {typ}: {tuple(param.size())}")
-            if class_name == 'Normalization' and typ=='mean':
-                # print('NMean')
-                # w = w
-                param.data.copy_(w.view_as(param))
-            elif class_name == 'Normalization' and typ=='stddiv':
+            if class_name == 'Normalization' and typ=='stddiv':
                 # print('NStddiv')
                 w = 1/torch.sqrt(w + 1e-5)
-                param.data.copy_(w.view_as(param))
-            elif len(param.size())==4:
-                # Convolutions turn out to be correctly transposed for pytorch
-                param.data.copy_(w.view_as(param))
-                unused_bias = True
-            else:
-                param.data.copy_(w.view_as(param))
-            param_idx += 1
+            param.data.copy_(w.view_as(param))
         return net

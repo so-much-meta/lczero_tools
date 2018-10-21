@@ -16,11 +16,13 @@ class ConvBlock(nn.Module):
         padding = kernel_size // 2
         self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size, stride=1, padding=padding, bias=False)
         self.conv1_bn = nn.BatchNorm2d(output_channels, affine=False)
+
     def forward(self, x):
         out = self.conv1_bn(self.conv1(x))
         out = F.relu(out, inplace=True)
         return out
-    
+
+
 class ResidualBlock(nn.Module):
     def __init__(self, channels):
         super().__init__()
@@ -28,6 +30,7 @@ class ResidualBlock(nn.Module):
         self.conv1_bn = nn.BatchNorm2d(channels, affine=False)
         self.conv2 = nn.Conv2d(channels, channels, 3, stride=1, padding=1, bias=False)
         self.conv2_bn = nn.BatchNorm2d(channels, affine=False)
+
     def forward(self, x):
         out = self.conv1_bn(self.conv1(x))
         out = F.relu(out, inplace=True)
@@ -35,6 +38,7 @@ class ResidualBlock(nn.Module):
         out += x
         out = F.relu(out, inplace=True)
         return out
+
 
 class LeelaModel(nn.Module):
     def __init__(self, channels, blocks):
@@ -57,6 +61,7 @@ class LeelaModel(nn.Module):
                                  output_channels=32)
         self.affine_val_1 = nn.Linear(32*8*8, 128)
         self.affine_val_2 = nn.Linear(128, 1)
+
     def forward(self, x):
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x)
@@ -70,7 +75,8 @@ class LeelaModel(nn.Module):
         out_val = F.relu(self.affine_val_1(out_val), inplace=True)
         out_val = F.tanh(self.affine_val_2(out_val))
         return out_pol, out_val
-    
+
+
 class LeelaLoader:
     @staticmethod
     def from_weights_file(filename, train=False):
