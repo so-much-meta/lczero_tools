@@ -39,7 +39,7 @@ class LCZToolsConfig:
             if os.path.isabs(basename):
                 return basename
         basename = basename or self.weights_file
-        return os.path.join(self.weights_dir, basename)
+        return os.path.join(os.path.expanduser(self.weights_dir), basename)
                 
 
 def find_config_file():

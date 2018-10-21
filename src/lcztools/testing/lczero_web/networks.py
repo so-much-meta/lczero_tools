@@ -19,7 +19,7 @@ class WeightsDownloader:
         if weights_dir is None:
             cfg = get_global_config()
             weights_dir = cfg.weights_dir
-        self.weights_dir = weights_dir
+        self.weights_dir = os.path.expanduser(weights_dir)
         if logging:
             self.log = lambda *args, **kwargs: print(*args, **kwargs)
         else:

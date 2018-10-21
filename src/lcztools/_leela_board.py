@@ -31,9 +31,11 @@ class LeelaBoard:
         self.is_game_over = self.pc_method('is_game_over')
         self.can_claim_draw = self.pc_method('can_claim_draw')
         self.generate_legal_moves = self.pc_method('generate_legal_moves')
+
     def pc_method(self, methodname):
         '''Return attribute of self.pc_board, useful for copying method bindings'''
         return getattr(self.pc_board, methodname)
+
     def _lcz_push(self):
         # print("_lcz_push")
         # Push data onto the lcz data stack after pushing board moves
@@ -73,20 +75,25 @@ class LeelaBoard:
             side_to_move=side_to_move, rule50_count=rule50_count
         )
         self.lcz_stack.append(lcz_data)
+
     def push(self, move):
         self.pc_board.push(move)
         self._lcz_push()
+
     def push_uci(self, uci):
         self.pc_board.push_uci(uci)
-        self._lcz_push()        
+        self._lcz_push()
+
     def push_san(self, san):
         self.pc_board.push_san(san)
-        self._lcz_push()        
+        self._lcz_push()
+
     def pop(self):
         result = self.pc_board.pop()
         _lcz_data = self.lcz_stack.pop()
         self._lcz_transposition_counter.subtract((_lcz_data.transposition_key,))
         return result
+
     def lcz_features(self):
         '''Get neural network input planes'''
         planes = []
@@ -113,6 +120,7 @@ class LeelaBoard:
         planes[-2] = 0
         planes[-1] = 1
         return planes
+
     def lcz_features_debug(self, fake_history=False, no_history=False, real_history=7, rule50=None, allones=None):
         '''Get neural network input planes, with ability to modify based on parameters'''
         planes = []
@@ -164,7 +172,8 @@ class LeelaBoard:
             planes[-1] = allones
         else:
             planes[-1] = 1
-        return planes    
+        return planes
+
     def lcz_uci_to_idx(self, uci_list):
         # Return list of NN policy output indexes for this board position, given uci_list
         
@@ -181,10 +190,13 @@ class LeelaBoard:
         uci_to_idx_index = (data.us_ooo | data.us_oo) +  2*data.side_to_move
         uci_idx_dct = _uci_to_idx[uci_to_idx_index]
         return [uci_idx_dct[m] for m in uci_list]
+
     def __repr__(self):
         return "LeelaBoard('{}')".format(self.pc_board.fen())
+
     def _repr_svg_(self):
         return self.pc_board._repr_svg_()
+
     def __str__(self):
         boardstr = self.pc_board.__str__() + \
                 '\nTurn: {}'.format('White' if self.pc_board.turn else 'Black')
