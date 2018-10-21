@@ -27,6 +27,10 @@ class LCZToolsConfig:
         # This is, e.g. ~/sompath/leela-chess/training/tf -- currently only used as hackish tensorflow
         # mechanism, which is not used with pytorch backend
         self.leela_training_tf_dir = dct.get('leela_training_tf_dir')
+
+        # Policy softmax temp
+        self.policy_softmax_temp = dct.get('policy_softmax_temp') or 1.0
+        self.policy_softmax_temp = float(self.policy_softmax_temp)
     
     def get_weights_filename(self, basename=None):
         '''Get weights filename given a base filename, or use default self.weights_file
