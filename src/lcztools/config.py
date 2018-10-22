@@ -21,9 +21,13 @@ class LCZToolsConfig:
         # This is the default backend to use, if none provided
         self.backend = dct.get('backend') or 'pytorch'
         
-        # This is the lczero engine to use, only currently used for testing/validation
-        self.lczero_engine = dct.get('lczero_engine')        
-        
+        ## No longer supported
+        ## This is the lczero engine to use, only currently used for testing/validation
+        # self.lczero_engine = dct.get('lczero_engine')
+
+        # This is the lc0 engine to use, only currently used for testing/validation
+        self.lc0_engine = dct.get('lc0_engine')
+
         # This is, e.g. ~/sompath/leela-chess/training/tf -- currently only used as hackish tensorflow
         # mechanism, which is not used with pytorch backend
         self.leela_training_tf_dir = dct.get('leela_training_tf_dir')

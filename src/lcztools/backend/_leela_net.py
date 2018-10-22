@@ -4,9 +4,10 @@ import numpy as np
 from lcztools.config import get_global_config
 from collections import OrderedDict
 
-def _softmax(x):
-    e_x = np.exp(x - np.max(x))
-    return e_x / e_x.sum(axis=0)  # only difference
+def _softmax(x, softmax_temp):
+    e_x = np.exp((x - np.max(x))/softmax_temp)
+    return e_x / e_x.sum(axis=0)
+
 
 class LeelaNet:
     def __init__(self, model, policy_softmax_temp = 1.0):
@@ -37,7 +38,8 @@ class LeelaNet:
             policy_legal = OrderedDict()
         value = value/2 + 0.5
         return policy_legal, value
-    
+
+
     def evaluate(self, leela_board):
         features = leela_board.lcz_features()
         policy, value = self.model(features)
@@ -51,7 +53,7 @@ class LeelaNet:
         legal_uci = [m.uci() for m in leela_board.generate_legal_moves()]
         if legal_uci:
             legal_indexes = leela_board.lcz_uci_to_idx(legal_uci)
-            softmaxed = _softmax(policy[legal_indexes]/self.policy_softmax_temp)
+            softmaxed = _softmax(policy[legal_indexes], self.policy_softmax_temp)
             policy_legal = OrderedDict(sorted(zip(legal_uci, softmaxed),
                                         key = lambda mp: (mp[1], mp[0]),
                                         reverse=True))
@@ -75,7 +77,7 @@ class LeelaNet:
         legal_uci = [m.uci() for m in leela_board.generate_legal_moves()]
         if legal_uci:
             legal_indexes = leela_board.lcz_uci_to_idx(legal_uci)
-            softmaxed = _softmax(policy[legal_indexes]/self.policy_softmax_temp)
+            softmaxed = _softmax(policy[legal_indexes], self.policy_softmax_temp)
             policy_legal = OrderedDict(sorted(zip(legal_uci, softmaxed),
                                         key = lambda mp: (mp[1], mp[0]),
                                         reverse=True))
