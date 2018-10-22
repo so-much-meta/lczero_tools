@@ -34,6 +34,7 @@ class TrainingRecord:
     SCALARS_STRUCT = struct.Struct('<7B1b')
     PROBS_STRUCT = struct.Struct('<1858f')
     PIECES_STRUCT = struct.Struct('<6Q')
+    NP_FLOAT32 = np.dtype('<f4')
     def __init__(self, data):
         # s = struct.unpack_from('<I1858f', data)
         self.data = data
@@ -58,7 +59,10 @@ class TrainingRecord:
             p2 = piece_ints_t2[idx]
             if p1!=p2:
                 return idx
-        
+    
+    def get_probabilities_numpy(self):
+        '''Return raw probabilities as numpy array'''
+        return np.frombuffer(self.data[4:4 + 1858*4], self.NP_FLOAT32)
 
     def get_probabilities(self):
         '''Get all moves with training probabilities greater than 0, 

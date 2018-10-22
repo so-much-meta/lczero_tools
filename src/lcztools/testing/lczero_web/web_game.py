@@ -13,7 +13,7 @@ class WebGame:
         
         URL may be the full URL, such as 'http://www.lczero.org/match_game/298660'
         or just a portion, like '298660'. Only the last portion is used'''
-        self.url = url
+        self.url = str(url)
 
     @lazy_property
     def text(self):
@@ -21,7 +21,7 @@ class WebGame:
     
     @lazy_property
     def soup(self):
-        return bs4.BeautifulSoup(self.text)
+        return bs4.BeautifulSoup(self.text, 'html.parser')
     
     @lazy_property
     def movelist(self):
@@ -42,7 +42,7 @@ class WebGame:
     
     @lazy_property
     def result(self):
-        return self.movelist[-1]
+        return self.movelist[-1].replace('\\','')
     
     @lazy_property
     def board(self):
@@ -60,7 +60,10 @@ class WebGame:
 
     @lazy_property
     def pgn_game(self):
-        return chess.pgn.Game.from_board(self.board)
+        pgn_game = chess.pgn.Game.from_board(self.board)
+        if self.board.can_claim_draw():
+            pgn_game.headers['Result'] = '1/2-1/2'
+        return pgn_game
         
     @lazy_property
     def pgn(self):
