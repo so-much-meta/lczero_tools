@@ -43,13 +43,13 @@ pip install git+https://github.com/so-much-meta/lczero_tools.git#egg=lczero-tool
 # Or just util extras (parse training games, run lczero engine, etc)
 pip install git+https://github.com/so-much-meta/lczero_tools.git#egg=lczero-tools[util]
 
-
+# Or from source tree...
 git clone https://github.com/so-much-meta/lczero_tools
 cd lczero_tools
 # Note: Creating and using a virtualenv or Conda environment before install is suggested, as always
-pip install .
+pip install .[torch, util]
 # Or for developer/editable install, to make in place changes:
-# pip install -e .
+# pip install -e .[torch, util]
 ```
 
 ## TODO

@@ -3,7 +3,7 @@ import setuptools
 
 setuptools.setup(
     name='lczero-tools',
-    version='0.1',
+    version='0.2',
     packages=setuptools.find_packages('src'),
     package_dir={'': 'src'},
     install_requires=[
