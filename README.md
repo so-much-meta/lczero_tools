@@ -11,7 +11,7 @@ Example usage (also see /tests/*.py and [Examples.ipynb](https://github.com/so-m
 ```python
 >>> from lcztools import load_network, LeelaBoard
 >>> # Note: use pytorch_cuda for cuda support
->>> net = load_network('pytorch', 'weights.txt.gz')
+>>> net = load_network('pytorch_cuda', 'weights.txt.gz')
 >>> board = LeelaBoard()
 >>> # Many of Python-chess's methods are passed through, along with board representation
 >>> board.push_uci('e2e4')
@@ -67,60 +67,3 @@ pip install .
 6. [ ] Investigate optimizations (CUDA, multiprocessing, etc). Goal is to eventually have a fast enough python-based implementation to do MCTS and get decent nodes/second comparable to Leela's engine -- in cases where neural network eval speed is the bottleneck.
    * [ ] However, no optimizations should get (too much) in the way of clarity or ease of changing code to do experiments.
 7. [ ] Possible MCTS implementation
-
-Note: In order to make this work with tensorflow CPU-only mode using leela-chess tfprocess, changes had to be made for dimension ordering of the input (most likely this change slows things down a lot)...
-```
-diff --git a/training/tf/tfprocess.py b/training/tf/tfprocess.py
-index 97f04a2..be79868 100644
---- a/training/tf/tfprocess.py
-+++ b/training/tf/tfprocess.py
-@@ -49,8 +49,11 @@ def bn_bias_variable(shape):
-     return tf.Variable(initial, trainable=False)
- 
- def conv2d(x, W):
--    return tf.nn.conv2d(x, W, data_format='NCHW',
-+    x = tf.transpose(x, [0, 2, 3, 1])
-+    x = tf.nn.conv2d(x, W, data_format='NHWC',
-                         strides=[1, 1, 1, 1], padding='SAME')
-+    x = tf.transpose(x, [0, 3, 1, 2])
-+    return x
- 
- class TFProcess:
-     def __init__(self, cfg):
-@@ -270,7 +273,7 @@ class TFProcess:
-             save_path = self.saver.save(self.session, path, global_step=steps)
-             print("Model saved in file: {}".format(save_path))
-             leela_path = path + "-" + str(steps) + ".txt"
--            self.save_leelaz_weights(leela_path) 
-+            self.save_leelaz_weights(leela_path)
-             print("Weights saved in file: {}".format(leela_path))
- 
-     def save_leelaz_weights(self, filename):
-@@ -328,7 +331,7 @@ class TFProcess:
-             h_bn = \
-                 tf.layers.batch_normalization(
-                     conv2d(inputs, W_conv),
--                    epsilon=1e-5, axis=1, fused=True,
-+                    epsilon=1e-5, axis=1, fused=False,
-                     center=False, scale=False,
-                     training=self.training)
-         h_conv = tf.nn.relu(h_bn)
-@@ -358,7 +361,7 @@ class TFProcess:
-             h_bn1 = \
-                 tf.layers.batch_normalization(
-                     conv2d(inputs, W_conv_1),
--                    epsilon=1e-5, axis=1, fused=True,
-+                    epsilon=1e-5, axis=1, fused=False,
-                     center=False, scale=False,
-                     training=self.training)
-         h_out_1 = tf.nn.relu(h_bn1)
-@@ -366,7 +369,7 @@ class TFProcess:
-             h_bn2 = \
-                 tf.layers.batch_normalization(
-                     conv2d(h_out_1, W_conv_2),
--                    epsilon=1e-5, axis=1, fused=True,
-+                    epsilon=1e-5, axis=1, fused=False,
-                     center=False, scale=False,
-                     training=self.training)
-         h_out_2 = tf.nn.relu(tf.add(h_bn2, orig))
-```

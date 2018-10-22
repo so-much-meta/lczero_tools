@@ -108,9 +108,6 @@ class LeelaLoader:
     def from_weights_file(filename, train=False, cuda=False):
         filters, blocks, weights = read_weights_file(filename)
         net = LeelaModel(filters, blocks)
-        if cuda:
-            print("Enabling CUDA!")
-            net.cuda()
         if not train:
             net.eval()
             for p in net.parameters():
@@ -130,4 +127,7 @@ class LeelaLoader:
                 # print('NStddiv')
                 w = 1/torch.sqrt(w + 1e-5)
             param.data.copy_(w.view_as(param))
+        if cuda:
+            print("Enabling CUDA!")
+            net.cuda()
         return net
