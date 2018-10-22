@@ -61,8 +61,12 @@ class WebGame:
     @lazy_property
     def pgn_game(self):
         pgn_game = chess.pgn.Game.from_board(self.board)
-        if self.board.can_claim_draw():
-            pgn_game.headers['Result'] = '1/2-1/2'
+        if pgn_game.headers['Result'] == '*':
+            if self.board.can_claim_draw():
+                pgn_game.headers['Result'] = '1/2-1/2'
+            elif len(self.board.move_stack) > 400:
+                # 450 move rule.. We'll just adjudicate it as a draw if no result and over 400 moves
+                pgn_game.headers['Result'] = '1/2-1/2'
         return pgn_game
         
     @lazy_property
