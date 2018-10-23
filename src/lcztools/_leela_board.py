@@ -3,6 +3,8 @@ import numpy as np
 import chess
 import struct
 from lcztools._uci_to_idx import uci_to_idx as _uci_to_idx
+from builtins import classmethod
+import zlib
 
 flat_planes = []
 for i in range(256):
@@ -190,6 +192,31 @@ class LeelaBoard:
         uci_to_idx_index = (data.us_ooo | data.us_oo) +  2*data.side_to_move
         uci_idx_dct = _uci_to_idx[uci_to_idx_index]
         return [uci_idx_dct[m] for m in uci_list]
+    
+    @classmethod
+    def compress_features(cls, features):
+        """Compress a features array as returned from lcz_features method"""
+        features_8 = features.astype(np.uint8)
+        # Simple compression would do this...
+        # return zlib.compress(features_8)
+        piece_plane_bytes = np.packbits(features_8[:-8]).tobytes()
+        scalar_bytes = features_8[-8:][:,0,0].tobytes()
+        compressed = zlib.compress(piece_plane_bytes + scalar_bytes)
+        return compressed
+    
+    @classmethod
+    def decompress_features(cls, compressed_features):
+        """Decompress a compressed features array from compress_features"""
+        decompressed = zlib.decompress(compressed_features)
+        # Simple decompression would do this
+        # return np.frombuffer(decompressed, dtype=np.uint8).astype(np.float32).reshape(-1,8,8)
+        piece_plane_bytes = decompressed[:-8]
+        scalar_bytes = decompressed[-8:]
+        piece_plane_arr = np.unpackbits(bytearray(piece_plane_bytes))
+        scalar_arr = np.frombuffer(scalar_bytes, dtype=np.uint8).repeat(64)
+        result = np.concatenate((piece_plane_arr, scalar_arr)).astype(np.float32).reshape(-1,8,8)
+        return result    
+    
 
     def __repr__(self):
         return "LeelaBoard('{}')".format(self.pc_board.fen())
