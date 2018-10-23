@@ -5,19 +5,20 @@ from lcztools.testing import WebMatchGame
 from collections import OrderedDict
 import shelve
 import sys
+import pickle
+import os
+import shutil
 
-with shelve.open('web_pgn_data.shelf') as s:
-    if 'df_matches' in s:
-        df_matches = s['df_matches'] 
-        match_dfs = s['match_dfs']
-        df_pgn = s['df_pgn']
+if os.path.exists('web_pgn.data'):
+    with open('web_pgn.data', 'rb') as f:
+        df_matches, match_dfs, df_pgn = pickle.load(f)
 
 if 'df_pgn' in dir():
-    print("Currently {} games in shelf".format(len(df_pgn)))
+    print("Currently {} games in web_pgn.data pickle".format(len(df_pgn)))
 else:
     print("No games yet in shelf...")
 # Everytime I run this, I'll grab an extra GAMES_TO_GRAB games
-GAMES_TO_GRAB = 10000
+GAMES_TO_GRAB = 100
 
 
 def get_table(url):
@@ -78,9 +79,11 @@ for match_id, row in df_matches.iterrows():
 
 print("Done... Downloaded {} files. Saving back to shelf".format(num_pgns_grabbed))
 
-with shelve.open('web_pgn_data.shelf') as s:
-    s['df_matches'] = df_matches
-    s['match_dfs'] = match_dfs
-    s['df_pgn'] = df_pgn
+if os.path.exists('web_pgn.data'):
+    shutil.copy('web_pgn.data', 'web_pgn.data.bup')
 
-print("Currently {} games in shelf".format(len(df_pgn)))
+print("Writing web_pgn.data")
+with open('web_pgn.data', 'wb') as f:
+    pickle.dump((df_matches, match_dfs, df_pgn), f)
+
+print("Currently {} games in web_pgn.data pickle".format(len(df_pgn)))

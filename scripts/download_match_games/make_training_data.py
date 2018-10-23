@@ -3,13 +3,16 @@ from lcztools import LeelaBoard
 import chess.pgn
 import io
 import pickle
-from collections import namedtuple
 import sys
 
-with shelve.open('web_pgn_data.shelf') as s:
-    df_matches = s['df_matches'] 
-    match_dfs = s['match_dfs']
-    df_pgn = s['df_pgn']
+# with shelve.open('web_pgn_data.shelf') as s:
+#     df_matches = s['df_matches']
+#     match_dfs = s['match_dfs']
+#     df_pgn = s['df_pgn']
+
+with open('web_pgn.data', 'rb') as f:
+    df_matches, match_dfs, df_pgn = pickle.load(f)
+
 
 for i, (idx, row) in enumerate(df_pgn.iterrows(), 1):
     lcz_board = LeelaBoard()
@@ -25,7 +28,7 @@ for i, (idx, row) in enumerate(df_pgn.iterrows(), 1):
         compressed_features = lcz_board.compress_features(features)
         compressed.append(compressed_features)
         # assert(check_compressed_features(lcz_board, compressed_features))
-    training_game = (compressed, pgn_game.headers['Result'])
+    training_game = (compressed, pgn_game.headers['Result'], row.pgn)
     with open(f'./training_data/match_game_{idx}.data', 'wb') as f:
         f.write(pickle.dumps(training_game))
     print('.', end='')

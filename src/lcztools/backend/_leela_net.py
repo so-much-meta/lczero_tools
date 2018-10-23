@@ -87,7 +87,8 @@ class LeelaNet:
         return policy_legal, value    
 
 def list_backends():
-    return ['pytorch_cpu', 'pytorch_cuda', 'pytorch_orig_cpu', 'pytorch_orig_cuda', 'tensorflow']
+    return ['pytorch_cpu', 'pytorch_cuda', 'pytorch_orig_cpu', 'pytorch_orig_cuda', 'tensorflow',
+            'pytorch_train_cpu', 'pytorch_train_cuda']
 
 def load_network(filename=None, backend=None, policy_softmax_temp=None):
     # Config will handle filename in read_weights_file
@@ -114,4 +115,11 @@ def load_network(filename=None, backend=None, policy_softmax_temp=None):
     elif backend == 'pytorch_orig_cuda':
         from lcztools.backend._leela_torch_net import LeelaLoader
         kwargs['cuda'] = True
+    elif backend == 'pytorch_train_cpu':
+        from lcztools.backend._leela_torch_net import LeelaLoader
+        kwargs['train'] = True
+    elif backend == 'pytorch_train_cuda':
+        from lcztools.backend._leela_torch_net import LeelaLoader
+        kwargs['cuda'] = True
+        kwargs['train'] = True
     return LeelaNet(LeelaLoader.from_weights_file(filename, **kwargs), policy_softmax_temp=policy_softmax_temp)
