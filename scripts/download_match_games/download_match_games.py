@@ -18,7 +18,7 @@ if 'df_pgn' in dir():
 else:
     print("No games yet in shelf...")
 # Everytime I run this, I'll grab an extra GAMES_TO_GRAB games
-GAMES_TO_GRAB = 100
+GAMES_TO_GRAB = 10000
 
 
 def get_table(url):
