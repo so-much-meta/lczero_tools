@@ -31,8 +31,7 @@ class LeelaBoard:
         self.is_game_over = self.pc_method('is_game_over')
         self.can_claim_draw = self.pc_method('can_claim_draw')
         self.generate_legal_moves = self.pc_method('generate_legal_moves')
-        self.uci_moves = []
-        
+
     def pc_method(self, methodname):
         '''Return attribute of self.pc_board, useful for copying method bindings'''
         return getattr(self.pc_board, methodname)
@@ -84,7 +83,6 @@ class LeelaBoard:
     def push_uci(self, uci):
         self.pc_board.push_uci(uci)
         self._lcz_push()
-        self.uci_moves.append(uci)
 
     def push_san(self, san):
         self.pc_board.push_san(san)
@@ -93,7 +91,6 @@ class LeelaBoard:
     def pop(self):
         result = self.pc_board.pop()
         _lcz_data = self.lcz_stack.pop()
-        self.uci_moves.pop()
         self._lcz_transposition_counter.subtract((_lcz_data.transposition_key,))
         return result
 
