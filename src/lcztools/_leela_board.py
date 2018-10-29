@@ -23,14 +23,24 @@ class LeelaBoard:
     turn = pc_board_property('turn')
     move_stack = pc_board_property('move_stack')
     
-    def __init__(self, *args, **kwargs):
-        self.pc_board = chess.Board(*args, **kwargs)
-        self.lcz_stack = []
-        self._lcz_transposition_counter = collections.Counter()
-        self._lcz_push()
+    def __init__(self, leela_board = None, *args, **kwargs):
+        '''If leela_board is passed as an argument, return a copy'''
+        if leela_board:
+            # Copy
+            self.pc_board = leela_board.pc_board.copy()
+            self.lcz_stack = leela_board.lcz_stack[:]
+            self._lcz_transposition_counter = leela_board._lcz_transposition_counter.copy()
+        else:
+            self.pc_board = chess.Board(*args, **kwargs)
+            self.lcz_stack = []
+            self._lcz_transposition_counter = collections.Counter()
+            self._lcz_push()
         self.is_game_over = self.pc_method('is_game_over')
         self.can_claim_draw = self.pc_method('can_claim_draw')
         self.generate_legal_moves = self.pc_method('generate_legal_moves')
+
+    def copy(self):
+        return self.__class__(leela_board=self)
 
     def pc_method(self, methodname):
         '''Return attribute of self.pc_board, useful for copying method bindings'''
