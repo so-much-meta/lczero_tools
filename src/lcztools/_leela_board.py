@@ -45,6 +45,16 @@ class LeelaBoard:
     def pc_method(self, methodname):
         '''Return attribute of self.pc_board, useful for copying method bindings'''
         return getattr(self.pc_board, methodname)
+    
+    def is_threefold(self):
+        transposition_key = self.pc_board._transposition_key()
+        return self._lcz_transposition_counter[transposition_key] >= 3
+    
+    def is_fifty_moves(self):
+        return self.pc_board.halfmove_clock >= 100
+    
+    def is_draw(self):
+        return self.is_threefold() or self.is_fifty_moves()
 
     def _lcz_push(self):
         # print("_lcz_push")
@@ -120,7 +130,7 @@ class LeelaBoard:
                 planes.append(data.white_planes[:,::-1])
                 planes.append(data.rep_planes)
         planes = np.concatenate(planes)
-        planes.resize(112,8,8)
+        planes.resize((112,8,8), refcheck=False)
         planes[-8] = curdata.us_ooo
         planes[-7] = curdata.us_oo
         planes[-6] = curdata.them_ooo
