@@ -21,16 +21,20 @@ def read_weights_file(filename):
         if version != '{}\n'.format(LEELA_WEIGHTS_VERSION):
             raise ValueError("Invalid version {}".format(version.strip()))
         weights = []
-        for e, line in enumerate(f):
-            line = line.decode('ascii')
+        e = 0
+        for line in f:
+            line = line.decode('ascii').strip()
+            if not line:
+                continue
+            e += 1
             weight = list(map(float, line.split(' ')))
             weights.append(weight)
-            if e == 1:
+            if e == 2:
                 filters = len(line.split(' '))
                 print("Channels", filters)
-        blocks = e - (3 + 14)
+        blocks = e - (4 + 14)
         if blocks % 8 != 0:
-            raise ValueError("Inconsistent number of weights in the file")
+            raise ValueError("Inconsistent number of weights in the file - e = {}".format(e))
         blocks //= 8
         print("Blocks", blocks)
     return (filters, blocks, weights)

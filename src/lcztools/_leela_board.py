@@ -23,19 +23,38 @@ class LeelaBoard:
     turn = pc_board_property('turn')
     move_stack = pc_board_property('move_stack')
     
-    def __init__(self, *args, **kwargs):
-        self.pc_board = chess.Board(*args, **kwargs)
-        self.lcz_stack = []
-        self._lcz_transposition_counter = collections.Counter()
-        self._lcz_push()
+    def __init__(self, leela_board = None, *args, **kwargs):
+        '''If leela_board is passed as an argument, return a copy'''
+        if leela_board:
+            # Copy
+            self.pc_board = leela_board.pc_board.copy()
+            self.lcz_stack = leela_board.lcz_stack[:]
+            self._lcz_transposition_counter = leela_board._lcz_transposition_counter.copy()
+        else:
+            self.pc_board = chess.Board(*args, **kwargs)
+            self.lcz_stack = []
+            self._lcz_transposition_counter = collections.Counter()
+            self._lcz_push()
         self.is_game_over = self.pc_method('is_game_over')
         self.can_claim_draw = self.pc_method('can_claim_draw')
         self.generate_legal_moves = self.pc_method('generate_legal_moves')
-        self.uci_moves = []
-        
+
+    def copy(self):
+        return self.__class__(leela_board=self)
+
     def pc_method(self, methodname):
         '''Return attribute of self.pc_board, useful for copying method bindings'''
         return getattr(self.pc_board, methodname)
+    
+    def is_threefold(self):
+        transposition_key = self.pc_board._transposition_key()
+        return self._lcz_transposition_counter[transposition_key] >= 3
+    
+    def is_fifty_moves(self):
+        return self.pc_board.halfmove_clock >= 100
+    
+    def is_draw(self):
+        return self.is_threefold() or self.is_fifty_moves()
 
     def _lcz_push(self):
         # print("_lcz_push")
@@ -84,7 +103,6 @@ class LeelaBoard:
     def push_uci(self, uci):
         self.pc_board.push_uci(uci)
         self._lcz_push()
-        self.uci_moves.append(uci)
 
     def push_san(self, san):
         self.pc_board.push_san(san)
@@ -93,7 +111,6 @@ class LeelaBoard:
     def pop(self):
         result = self.pc_board.pop()
         _lcz_data = self.lcz_stack.pop()
-        self.uci_moves.pop()
         self._lcz_transposition_counter.subtract((_lcz_data.transposition_key,))
         return result
 
@@ -113,7 +130,7 @@ class LeelaBoard:
                 planes.append(data.white_planes[:,::-1])
                 planes.append(data.rep_planes)
         planes = np.concatenate(planes)
-        planes.resize(112,8,8)
+        planes.resize((112,8,8), refcheck=False)
         planes[-8] = curdata.us_ooo
         planes[-7] = curdata.us_oo
         planes[-6] = curdata.them_ooo
