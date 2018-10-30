@@ -19,11 +19,11 @@ class Normalization(nn.Module):
     def __init__(self, channels):
         super().__init__()
         self.channels = channels
-        self.mean = nn.Parameter(torch.Tensor(channels))
-        self.stddiv = nn.Parameter(torch.Tensor(channels))
+        self.mean = nn.Parameter(torch.Tensor(channels).unsqueeze(-1).unsqueeze(-1))
+        self.stddiv = nn.Parameter(torch.Tensor(channels).unsqueeze(-1).unsqueeze(-1))
 
     def forward(self, x):
-        return x.sub_(self.mean.unsqueeze(1).unsqueeze(2)).mul_(self.stddiv.unsqueeze(1).unsqueeze(2))
+        return x.sub_(self.mean).mul_(self.stddiv)
 
     def extra_repr(self):
         return 'channels={}'.format(
@@ -106,6 +106,8 @@ class LeelaModel(nn.Module):
 class LeelaLoader:
     @staticmethod
     def from_weights_file(filename, train=False, cuda=False):
+        if cuda:
+            torch.backends.cudnn.benchmark=True
         filters, blocks, weights = read_weights_file(filename)
         net = LeelaModel(filters, blocks)
         if not train:
