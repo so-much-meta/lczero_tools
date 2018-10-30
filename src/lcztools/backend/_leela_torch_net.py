@@ -119,6 +119,8 @@ class LeelaModel(nn.Module):
 class LeelaLoader:
     @staticmethod
     def from_weights_file(filename, train=False, cuda=False):
+        if cuda:
+            torch.backends.cudnn.benchmark=True        
         filters, blocks, weights = read_weights_file(filename)
         net = LeelaModel(filters, blocks)
         if not train:

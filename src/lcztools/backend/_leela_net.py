@@ -87,7 +87,7 @@ class LeelaNet:
         return policy_legal, value    
 
 def list_backends():
-    return ['pytorch_cpu', 'pytorch_cuda', 'pytorch_orig_cpu', 'pytorch_orig_cuda', 'tensorflow',
+    return ['pytorch_eval_cpu', 'pytorch_eval_cuda', 'pytorch_cpu', 'pytorch_cuda', 'tensorflow',
             'pytorch_train_cpu', 'pytorch_train_cuda']
 
 def load_network(filename=None, backend=None, policy_softmax_temp=None):
@@ -105,14 +105,14 @@ def load_network(filename=None, backend=None, policy_softmax_temp=None):
     if backend == 'tensorflow':
         raise Exception("Tensorflow temporarily disabled, untested since latest changes")  # Temporarily
         from lcztools.backend._leela_tf_net import LeelaLoader
-    elif backend == 'pytorch_cpu':
+    elif backend == 'pytorch_eval_cpu':
         from lcztools.backend._leela_torch_eval_net import LeelaLoader
-    elif backend == 'pytorch_cuda':
+    elif backend == 'pytorch_eval_cuda':
         from lcztools.backend._leela_torch_eval_net import LeelaLoader
         kwargs['cuda'] = True
-    elif backend == 'pytorch_orig_cpu':
+    elif backend == 'pytorch_cpu':
         from lcztools.backend._leela_torch_net import LeelaLoader
-    elif backend == 'pytorch_orig_cuda':
+    elif backend == 'pytorch_cuda':
         from lcztools.backend._leela_torch_net import LeelaLoader
         kwargs['cuda'] = True
     elif backend == 'pytorch_train_cpu':

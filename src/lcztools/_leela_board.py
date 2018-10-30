@@ -38,7 +38,7 @@ class LeelaBoard:
         self.is_game_over = self.pc_method('is_game_over')
         self.can_claim_draw = self.pc_method('can_claim_draw')
         self.generate_legal_moves = self.pc_method('generate_legal_moves')
-
+                
     def copy(self):
         """Note! Currently the copy constructor uses pc_board.copy(stack=False), which makes pops impossible"""
         return self.__class__(leela_board=self)
@@ -222,6 +222,19 @@ class LeelaBoard:
         boardstr = self.pc_board.__str__() + \
                 '\nTurn: {}'.format('White' if self.pc_board.turn else 'Black')
         return boardstr
+    
+    def __eq__(self, other):
+        return self.get_hash_key() == other.get_hash_key()
+    
+    def __hash__(self):
+        return hash(self.get_hash_key())
+
+    def get_hash_key(self):
+        transposition_key = self.pc_board._transposition_key() 
+        return (transposition_key +
+                (self._lcz_transposition_counter[transposition_key], self.pc_board.halfmove_clock) +
+                tuple(self.pc_board.move_stack[-8:])
+                )
 
 # lb = LeelaBoard()
 # lb.push_uci('c2c4')
