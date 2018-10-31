@@ -87,7 +87,11 @@ class LeelaNet:
         return policy_legal, value    
 
 def list_backends():
+<<<<<<< HEAD
     return ['pytorch_eval_cpu', 'pytorch_eval_cuda', 'pytorch_cpu', 'pytorch_cuda', 'tensorflow',
+=======
+    return ['pytorch_cpu', 'pytorch_cuda', 'pytorch_orig_cpu', 'pytorch_orig_cuda', 'tensorflow',
+>>>>>>> refs/heads/lcz_training
             'pytorch_train_cpu', 'pytorch_train_cuda']
 
 def load_network(filename=None, backend=None, policy_softmax_temp=None):

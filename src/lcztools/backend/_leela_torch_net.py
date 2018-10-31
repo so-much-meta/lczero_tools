@@ -108,7 +108,11 @@ class LeelaModel(nn.Module):
                     else:
                         param_data = param.cpu().detach()
                     lines.append(' '.join(map(str, param_data.flatten().tolist())))
+<<<<<<< HEAD
         lines.append('')
+=======
+        # lines.append('')
+>>>>>>> refs/heads/lcz_training
         with open(filename, 'w') as f:
             for line in lines:
                 f.write(line)
