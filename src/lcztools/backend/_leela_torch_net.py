@@ -7,13 +7,16 @@ import numpy as np
 
 from lcztools.weights import read_weights_file
 
+
 class CenteredBatchNorm2d(nn.BatchNorm2d):
-    """Batch normalization with beta, but no gamma... I.e., there's a learnable bias, but no scale"""
+    """It appears the only way to get a trainable model with beta (bias) but not scale (weight
+     is by keeping the weight data, even though it's not used"""
 
     def __init__(self, channels):
         super().__init__(channels, affine=True)
-        del self.weight
-        self.register_parameter('weight', None)
+        self.weight.data.fill_(1)
+        self.weight.requires_grad = False
+
 
 class ConvBlock(nn.Module):
     def __init__(self, kernel_size, input_channels, output_channels=None):
@@ -85,6 +88,33 @@ class LeelaModel(nn.Module):
         out_val = self.affine_val_2(out_val).tanh()
         return out_pol, out_val
 
+    def save_weights_file(self, filename):
+        LEELA_WEIGHTS_VERSION = '2'
+        lines = [LEELA_WEIGHTS_VERSION]
+        print("Saving weights file:")
+        for module_name, module in self.named_modules():
+            print('.', end='')
+            class_name = module.__class__.__name__
+            for typ in ('weight', 'bias', 'running_mean', 'running_var'):
+                param = getattr(module, typ, None)
+                if param is not None:
+                    # print(module_name, class_name, typ)
+                    if class_name == 'CenteredBatchNorm2d' and typ == 'weight':
+                        continue
+                    elif class_name == 'CenteredBatchNorm2d' and typ == 'bias':
+                        # print('-- updating')
+                        std = torch.sqrt(getattr(module, 'running_var').cpu().detach() + 1e-5)
+                        param_data = param.cpu().detach() * std
+                    else:
+                        param_data = param.cpu().detach()
+                    lines.append(' '.join(map(str, param_data.flatten().tolist())))
+        lines.append('')
+        with open(filename, 'w') as f:
+            for line in lines:
+                f.write(line)
+                f.write('\n')
+        print("Done saving weights!")
+
 
 class LeelaLoader:
     @staticmethod
@@ -101,20 +131,39 @@ class LeelaLoader:
             for typ in ('weight', 'bias', 'running_mean', 'running_var'):
                 param = getattr(module, typ, None)
                 if param is not None:
+                    if class_name == 'CenteredBatchNorm2d' and typ == 'weight':
+                        continue
                     parameters.append((module_name, class_name, typ, param))
         for i, w in enumerate(weights):
             w = torch.Tensor(w)
             module_name, class_name, typ, param = parameters[i]
+            # print(param.shape)
             # print(f"{tuple(w.size())} -- {module_name} - {class_name} - {typ}: {tuple(param.size())}")
             if class_name == 'CenteredBatchNorm2d' and typ == 'bias':
                 # Remember bias so it can be updated to a BatchNorm beta when the running_var is seen
                 bn_bias_param = param
-            if class_name == 'CenteredBatchNorm2d' and typ=='running_var':
+            if class_name == 'CenteredBatchNorm2d' and typ == 'running_var':
                 # print("Updating bias")
                 std = torch.sqrt(w + 1e-5)
-                bn_bias_param.data.div_(std.view_as(param))
+                bn_bias_param.detach().div_(std.view_as(param))
             param.data.copy_(w.view_as(param))
         if cuda:
             print("Enabling CUDA!")
             net.cuda()
         return net
+
+
+# Simple test to verify saving weights...
+# net = load_network()
+#
+# net.model.save_weights_file('test_weights_2.txt')
+#
+# import numpy as np
+#
+# with open('test_weights_2.txt') as f1:
+#     with open('weights_run1_21754.txt') as f2:
+#         for l1, l2 in zip(f1, f2):
+#             l1 = np.array([float(s) for s in l1.strip().split()])
+#             l2 = np.array([float(s) for s in l2.strip().split()])
+#             s = sum((l1 - l2) ** 2) / len(l1)
+#             print(s)

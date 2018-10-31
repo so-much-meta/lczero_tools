@@ -27,7 +27,7 @@ class LeelaBoard:
         '''If leela_board is passed as an argument, return a copy'''
         if leela_board:
             # Copy
-            self.pc_board = leela_board.pc_board.copy()
+            self.pc_board = leela_board.pc_board.copy(stack=False)
             self.lcz_stack = leela_board.lcz_stack[:]
             self._lcz_transposition_counter = leela_board._lcz_transposition_counter.copy()
         else:
@@ -40,6 +40,7 @@ class LeelaBoard:
         self.generate_legal_moves = self.pc_method('generate_legal_moves')
 
     def copy(self):
+        """Note! Currently the copy constructor uses pc_board.copy(stack=False), which makes pops impossible"""
         return self.__class__(leela_board=self)
 
     def pc_method(self, methodname):
