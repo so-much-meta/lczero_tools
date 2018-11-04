@@ -31,6 +31,14 @@ class Normalization(nn.Module):
         )
 
 
+def prenormalize(conv, bn):
+    new_weight = conv.weight * bn.stddiv.unsqueeze(-1)
+    new_bias = ((conv.bias * bn.stddiv.flatten()) -
+                (bn.mean.flatten() * bn.stddiv.flatten()))
+    conv.weight.copy_(new_weight)
+    conv.bias.copy_(new_bias)
+
+
 class ConvBlock(nn.Module):
     def __init__(self, kernel_size, input_channels, output_channels=None):
         super().__init__()
@@ -39,8 +47,18 @@ class ConvBlock(nn.Module):
         padding = kernel_size // 2
         self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size, stride=1, padding=padding, bias=True)
         self.conv1_bn = Normalization(output_channels)
+        
+    def prenormalize(self):
+        prenormalize(self.conv1, self.conv1_bn)
+        del self.conv1_bn        
 
     def forward(self, x):
+        out = self.conv1(x)
+        out = F.relu(out, inplace=True)
+        return out
+
+    def _forward_(self, x):
+        """Old forward without prenormaliztion"""
         out = self.conv1_bn(self.conv1(x))
         out = F.relu(out, inplace=True)
         return out
@@ -53,8 +71,24 @@ class ResidualBlock(nn.Module):
         self.conv1_bn = Normalization(channels)
         self.conv2 = nn.Conv2d(channels, channels, 3, stride=1, padding=1, bias=True)
         self.conv2_bn = Normalization(channels)
+        
+    def prenormalize(self):
+        prenormalize(self.conv1, self.conv1_bn)
+        prenormalize(self.conv2, self.conv2_bn)
+        del self.conv1_bn
+        del self.conv2_bn
 
     def forward(self, x):
+        """Old forward without prenormaliztion"""
+        out = self.conv1(x)
+        out = F.relu(out, inplace=True)
+        out = self.conv2(out)
+        out += x
+        out = F.relu(out, inplace=True)
+        return out
+
+    def _forward_(self, x):
+        """Old forward without prenormaliztion"""
         out = self.conv1_bn(self.conv1(x))
         out = F.relu(out, inplace=True)
         out = self.conv2_bn(self.conv2(out))
@@ -84,8 +118,19 @@ class LeelaModel(nn.Module):
                                  output_channels=32)
         self.affine_val_1 = nn.Linear(32*8*8, 128)
         self.affine_val_2 = nn.Linear(128, 1)
+        self.prenormalized = False
+        
+    def prenormalize(self):
+        self.conv_in.prenormalize()
+        self.conv_pol.prenormalize()
+        self.conv_val.prenormalize()
+        for block in self.residual_blocks:
+            block.prenormalize()
+        self.prenormalized = True
 
     def forward(self, x):
+        if not self.prenormalized:
+            raise Exception("Must call prenormalize first!")
         if isinstance(x, np.ndarray):
             x = torch.from_numpy(x)
             if next(self.parameters()).is_cuda:
@@ -105,7 +150,7 @@ class LeelaModel(nn.Module):
 
 class LeelaLoader:
     @staticmethod
-    def from_weights_file(filename, train=False, cuda=False):
+    def from_weights_file(filename, train=False, cuda=False, half=False):
         if cuda:
             torch.backends.cudnn.benchmark=True
         filters, blocks, weights = read_weights_file(filename)
@@ -129,7 +174,10 @@ class LeelaLoader:
                 # print('NStddiv')
                 w = 1/torch.sqrt(w + 1e-5)
             param.data.copy_(w.view_as(param))
+        if half:
+            net.half()            
         if cuda:
             print("Enabling CUDA!")
             net.cuda()
+        net.prenormalize()
         return net

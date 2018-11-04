@@ -118,7 +118,7 @@ class LeelaModel(nn.Module):
 
 class LeelaLoader:
     @staticmethod
-    def from_weights_file(filename, train=False, cuda=False):
+    def from_weights_file(filename, train=False, cuda=False, half=False):
         if cuda:
             torch.backends.cudnn.benchmark=True        
         filters, blocks, weights = read_weights_file(filename)
@@ -149,6 +149,8 @@ class LeelaLoader:
                 std = torch.sqrt(w + 1e-5)
                 bn_bias_param.detach().div_(std.view_as(param))
             param.data.copy_(w.view_as(param))
+        if half:
+            net.half()            
         if cuda:
             print("Enabling CUDA!")
             net.cuda()
