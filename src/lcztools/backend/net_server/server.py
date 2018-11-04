@@ -94,7 +94,7 @@ class ServerTask(threading.Thread):
         batch_features_append = self.batch_features.append
         batch_ident = self.batch_ident
         while not self.finished:
-            socks = poll(2000)
+            socks = poll(1000)
             # Only one socket event, so we'll not worry about doing dict(poller.poll())
             if not socks:
                 # We've been blocked for 2 seconds. Let's set the batch size
