@@ -36,6 +36,31 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 0.4715215042233467
 ```
 
+## Create network server
+
+It is possible to load the network (or multiple different networks) once in a network server, and access this by multiple clients.
+IPC communication is via zeromq.
+
+```bash
+python -m lcztools.backend.net_server.server weights_file1.txt.gz weights_file2.txt.gz
+```
+After the server starts, clients can access it like so using the load_network interface:
+
+```python
+>>> from lcztools import load_network, LeelaBoard
+>>> net0 = load_network(backend='net_client', network_id=0)
+>>> net1 = load_network(backend='net_client', network_id=1)
+>>> board = LeelaBoard()
+>>> policy0, value0 = net0.evaluate(board)
+>>> policy1, value1 = net1.evaluate(board)
+```
+
+Max batch size can be configured by entering it after the weights file. Default is 32.
+
+```bash
+python -m lcztools.backend.net_server.server weights_file1.txt.gz 8 weights_file2.txt.gz 8
+```
+
 ## INSTALL
 ```
 # With both torch and util dependencies for NN evaluation
