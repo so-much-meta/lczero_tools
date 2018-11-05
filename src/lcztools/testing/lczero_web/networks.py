@@ -70,13 +70,13 @@ class WeightsDownloader:
         
     def download(self, filename, skip_already_downloaded = True):
         '''Downlaod weights file'''
-        self.log(f"Downloading weights file: {filename}")
+        self.log("Downloading weights file: {}".format(filename))
         if filename not in self.weights_urls:
             raise Exception("Unknown file! {}".format(filename))
         url = self.weights_urls[filename]
         if skip_already_downloaded:
             if self.is_already_downloaded(filename):
-                self.log(f"==> Already downloaded (Downloading weights file: {filename})")
+                self.log("==> Already downloaded (Downloading weights file: {})".format(filename))
                 return False
         fullpath = os.path.join(self.weights_dir, filename)
         fullpath_tmp = fullpath + '_download'
@@ -84,5 +84,5 @@ class WeightsDownloader:
             with open(os.path.expanduser(fullpath_tmp), 'wb') as f:
                 shutil.copyfileobj(r.raw, f)
         os.rename(fullpath_tmp, fullpath)
-        self.log(f"==> Success (Downloading weights file: {filename})")
+        self.log("==> Success (Downloading weights file: {})".format(filename))
     
