@@ -26,14 +26,17 @@ class LeelaNetBase:
             # Assume it's a torch tensor
             policy = policy.cpu().numpy()
             value = value.cpu().numpy()
-        value = value[0]
+        # Results must be converted to float because operations
+        # on numpy scalars can be very slow
+        value = float(value[0])
         # Knight promotions are represented without a suffix in leela-chess
         # ==> the transformation is done in lcz_uci_to_idx
         legal_uci = [m.uci() for m in leela_board.generate_legal_moves()]
         if legal_uci:
             legal_indexes = leela_board.lcz_uci_to_idx(legal_uci)
             softmaxed = _softmax(policy[legal_indexes], self.policy_softmax_temp)
-            policy_legal = OrderedDict(sorted(zip(legal_uci, softmaxed),
+            softmaxed_aspython = map(float, softmaxed)
+            policy_legal = OrderedDict(sorted(zip(legal_uci, softmaxed_aspython),
                                         key = lambda mp: (mp[1], mp[0]),
                                         reverse=True))
         else:

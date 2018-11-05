@@ -1,6 +1,7 @@
 import collections
 import numpy as np
 import chess
+from chess import Move
 import struct
 from lcztools._uci_to_idx import uci_to_idx as _uci_to_idx
 import zlib
@@ -23,6 +24,7 @@ def pc_board_property(propertyname):
 class LeelaBoard:
     turn = pc_board_property('turn')
     move_stack = pc_board_property('move_stack')
+    _plane_bytes_struct = struct.Struct('>Q')
     
     def __init__(self, leela_board = None, *args, **kwargs):
         '''If leela_board is passed as an argument, return a copy'''
@@ -39,6 +41,8 @@ class LeelaBoard:
         cls = type(self)
         copied = cls.__new__(cls)
         copied.pc_board = self.pc_board.copy(stack=False)
+        copied.pc_board.stack[:] = self.pc_board.stack[-7:]
+        copied.pc_board.move_stack[:] = self.pc_board.move_stack[-7:]
         copied.lcz_stack = self.lcz_stack[:]
         copied._lcz_transposition_counter = self._lcz_transposition_counter.copy()
         copied.is_game_over = copied.pc_method('is_game_over')
@@ -65,7 +69,9 @@ class LeelaBoard:
         self._lcz_push()
 
     def push_uci(self, uci):
-        self.pc_board.push_uci(uci)
+        # don't check for legality - it takes much longer to run...
+        # self.pc_board.push_uci(uci)
+        self.pc_board.push(Move.from_uci(uci))
         self._lcz_push()
 
     def push_san(self, san):
@@ -80,9 +86,11 @@ class LeelaBoard:
 
     def _plane_bytes_iter(self):
         """Get plane bytes... used for _lcz_push"""
+        pack = self._plane_bytes_struct.pack
+        pieces_mask = self.pc_board.pieces_mask
         for color in (True, False):
             for piece_type in range(1,7):
-                byts = struct.pack('>Q', self.pc_board.pieces_mask(piece_type, color))
+                byts = pack(pieces_mask(piece_type, color))
                 yield byts
 
     def _lcz_push(self):
@@ -247,8 +255,16 @@ class LeelaBoard:
         piece_plane_arr = np.unpackbits(bytearray(piece_plane_bytes))
         scalar_arr = np.frombuffer(scalar_bytes, dtype=np.uint8).repeat(64)
         result = np.concatenate((piece_plane_arr, scalar_arr)).astype(np.float32).reshape(-1,8,8)
-        return result    
+        return result
     
+    def unicode(self):
+        if self.pc_board.is_game_over() or self.is_draw():
+            result = self.pc_board.result(claim_draw=True)
+            turnstring = 'Result: {}'.format(result)
+        else:
+            turnstring = 'Turn: {}'.format('White' if self.pc_board.turn else 'Black') 
+        boardstr = self.pc_board.unicode() + "\n" + turnstring
+        return boardstr
 
     def __repr__(self):
         return "LeelaBoard('{}')".format(self.pc_board.fen())
@@ -257,8 +273,12 @@ class LeelaBoard:
         return self.pc_board._repr_svg_()
 
     def __str__(self):
-        boardstr = self.pc_board.__str__() + \
-                '\nTurn: {}'.format('White' if self.pc_board.turn else 'Black')
+        if self.pc_board.is_game_over() or self.is_draw():
+            result = self.pc_board.result(claim_draw=True)
+            turnstring = 'Result: {}'.format(result)
+        else:
+            turnstring = 'Turn: {}'.format('White' if self.pc_board.turn else 'Black') 
+        boardstr = self.pc_board.__str__() + "\n" + turnstring
         return boardstr
     
     def __eq__(self, other):
@@ -271,7 +291,7 @@ class LeelaBoard:
         transposition_key = self.pc_board._transposition_key() 
         return (transposition_key +
                 (self._lcz_transposition_counter[transposition_key], self.pc_board.halfmove_clock) +
-                tuple(self.pc_board.move_stack[-8:])
+                tuple(self.pc_board.move_stack[-7:])
                 )
 
 # lb = LeelaBoard()
