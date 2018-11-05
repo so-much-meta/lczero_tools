@@ -9,6 +9,15 @@ import contextlib
 from lcztools import load_network, LeelaBoard
 import math
 import pathlib
+import signal
+
+FINISHED = False
+
+def signal_handler(signal, frame):
+    """Signal handler started after threads start"""
+    global FINISHED
+    print('Ctrl+C Pressed. Exiting')
+    FINISHED = True
 
 lcztools_tmp_path = pathlib.Path("/tmp/lcztools")
 
@@ -41,9 +50,10 @@ class ServerTask(threading.Thread):
         self.batches_processed_start = time.time()
         self.max_batch_size = 32 if not max_batch_size else max_batch_size
         assert(1 <= self.max_batch_size <= 2048)
-        self.finished = False
+        # self.finished = False
         self._send_condition = threading.Condition()
         self._process_and_send_thread = threading.Thread(target=self.process_and_send)
+        self._process_and_send_thread.daemon = True
         self._process_and_send_thread.start()
         self.half = half
         if self.half:
@@ -93,7 +103,7 @@ class ServerTask(threading.Thread):
         deserialize_features = LeelaBoard.deserialize_features
         batch_features_append = self.batch_features.append
         batch_ident = self.batch_ident
-        while not self.finished:
+        while not FINISHED: 
             socks = poll(1000)
             # Only one socket event, so we'll not worry about doing dict(poller.poll())
             if not socks:
@@ -164,7 +174,13 @@ if __name__ == '__main__':
     print("Loading networks and starting server tasks")
     for task in tasks:
         task.load()
+    signal.signal(signal.SIGINT, signal_handler)
     for task in tasks:
         task.start()
+    print()
+    print("STARTED: PRESS CTRL-C TO EXIT.")
+    print()
     for task in tasks:
         task.join()
+
+        
