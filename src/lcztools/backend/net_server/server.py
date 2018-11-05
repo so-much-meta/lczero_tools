@@ -39,7 +39,7 @@ class ServerTask(threading.Thread):
         self.batch_size = 1
         self.batches_processed = 0
         self.batches_processed_start = time.time()
-        self.max_batch_size = 256 if not max_batch_size else max_batch_size
+        self.max_batch_size = 32 if not max_batch_size else max_batch_size
         assert(1 <= self.max_batch_size <= 2048)
         self.finished = False
         self._send_condition = threading.Condition()

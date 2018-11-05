@@ -8,6 +8,7 @@ from random import randint, random
 import numpy as np
 import os
 import pathlib
+from itertools import count
 
 from lcztools.backend import LeelaNetBase
 
@@ -33,9 +34,17 @@ class LeelaClientNet(LeelaNetBase):
         self.socket = self.context.socket(zmq.DEALER)
         self.socket.identity = self.identity.encode('ascii')
         socket_path = lcztools_tmp_path.joinpath('network_{}'.format(network_id))
+        if not pathlib.Path(socket_path).exists():
+            for cnt in count():
+                if cnt%30==0:
+                    print("Socket {} does not exist\nPlease start network server for network_id = {}".format(socket_path, network_id))
+                time.sleep(0.1)
+                if pathlib.Path(socket_path).exists():
+                    break
         self.socket.connect('ipc://{}'.format(socket_path))
         if hi:
-            self.hi()              
+            self.hi()
+        print("Connected to network server {}".format(network_id))
 
     def call_model_eval(self, leela_board):
         message = leela_board.serialize_features()

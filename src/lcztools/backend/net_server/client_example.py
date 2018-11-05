@@ -44,7 +44,7 @@ class ClientTask(threading.Thread):
 
 def main():
     """main function"""
-    for i in range(32):
+    for i in range(16):
         client = ClientTask(i)
         client.start()
 
