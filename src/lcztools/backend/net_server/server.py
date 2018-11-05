@@ -10,6 +10,8 @@ from lcztools import load_network, LeelaBoard
 import math
 import pathlib
 import signal
+import queue
+
 
 FINISHED = False
 
@@ -30,6 +32,7 @@ def clean_uds():
 
 class ServerTask(threading.Thread):
     _cuda_lock = threading.Lock()
+    
     """ServerTask"""
     def __init__(self, weights_file, network_id, max_batch_size=None, half=False):
         super().__init__ ()
@@ -50,8 +53,7 @@ class ServerTask(threading.Thread):
         self.batches_processed_start = time.time()
         self.max_batch_size = 32 if not max_batch_size else max_batch_size
         assert(1 <= self.max_batch_size <= 2048)
-        # self.finished = False
-        self._send_condition = threading.Condition()
+        self._queue = queue.Queue(2)  # The batch queue, maximum of two batches can be in it at a time
         self._process_and_send_thread = threading.Thread(target=self.process_and_send)
         self._process_and_send_thread.daemon = True
         self._process_and_send_thread.start()
@@ -60,27 +62,28 @@ class ServerTask(threading.Thread):
             self.dtype = np.float16
         else:
             self.dtype = np.float32
+        self.messages_sent = 0
+        self.messages_received = 0
         
     def process_and_send(self):
-        with self._send_condition:
-            while True:
-                self._send_condition.wait()
-                with self._cuda_lock:
-                    pol, val = self.model(self.cur_features_stack)
-                pol = pol.cpu().numpy()
-                val = val.cpu().numpy()
-                # pol, val = process_batch(net.model, batch_features)
-                for ident, policy, value in zip(self.cur_batch_ident, pol, val):
-                    result = value.tobytes() + policy.tobytes()
-                    self.socket.send_multipart([ident, result])
+        while True:
+            features_stack, batch_ident = self._queue.get()
+            with self._cuda_lock:
+                pol, val = self.model(features_stack)
+            pol = pol.cpu().numpy()
+            val = val.cpu().numpy()
+            # pol, val = process_batch(net.model, batch_features)
+            for ident, policy, value in zip(batch_ident, pol, val):
+                result = value.tobytes() + policy.tobytes()
+                self.socket.send_multipart([ident, result])
+                self.messages_sent += 1
     
     def process_batch(self):
         if not self.batch_ident:
             return
-        with self._send_condition:
-            self.cur_features_stack = np.stack(self.batch_features).astype(self.dtype)
-            self.cur_batch_ident = self.batch_ident[:]
-            self._send_condition.notify()
+        cur_features_stack = np.stack(self.batch_features).astype(self.dtype)
+        cur_batch_ident = self.batch_ident[:]
+        self._queue.put((cur_features_stack, cur_batch_ident))
         self.batch_ident.clear()
         self.batch_features.clear()
         self.batches_processed += 1
@@ -110,6 +113,7 @@ class ServerTask(threading.Thread):
                 # We've been blocked for 2 seconds. Let's set the batch size
                 if not blocked:
                     print("Network {} -- BLOCKED with {} items in batch".format(self.network_id, len(self.batch_ident)))
+                    print("Network {} -- NN items received {}, results sent {}".format(self.network_id, self.messages_received, self.messages_sent))
                 if not len(self.batch_ident):
                     blocked = True    
                 if len(self.batch_ident) == 0:
@@ -128,6 +132,7 @@ class ServerTask(threading.Thread):
                     # client_ident_set.add(ident)
                     pass
                 continue
+            self.messages_received += 1
             batch_ident_append(ident)
             batch_features_append(deserialize_features(msg))
             if len(batch_ident)>=self.batch_size:
