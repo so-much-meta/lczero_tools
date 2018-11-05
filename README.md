@@ -38,7 +38,8 @@ OrderedDict([('c7c5', 0.5102739), ('e7e5', 0.16549255), ('e7e6', 0.11846365), ('
 
 ## Create network server
 
-It is possible to load the network (or multiple different networks) once in a network server, and access this by multiple clients.
+It is possible to load the network (or multiple different networks) once in a network server, and access this by multiple clients. This does not add much overhead, and creates a significant speedup by batching GPU operations if multiple clients are simultaneously connected.
+
 IPC communication is via zeromq.
 
 ```bash
@@ -55,7 +56,7 @@ After the server starts, clients can access it like so using the load_network in
 >>> policy1, value1 = net1.evaluate(board)
 ```
 
-Max batch size can be configured by entering it after the weights file. Default is 32.
+Max batch size can be configured by entering it after the weights file. Default is 32. Batch sizes are generally powers of 2 (starting at 1), and it can help to set this to the batch size that will actually be used if less than 32 clients are connected. When a new client connects, it sends a "hi" message to the server, which causes the server to reset the batch size to the max_batch_size (this message can also be sent throughout a program's executin via net.hi()). The network server will block up to 1 second if the batch is not filled, at which time the batch size is reset to the greatest power of 2 less than or equal to the number of items currently in the batch.
 
 ```bash
 python -m lcztools.backend.net_server.server weights_file1.txt.gz 8 weights_file2.txt.gz 8
