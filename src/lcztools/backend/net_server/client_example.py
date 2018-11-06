@@ -22,15 +22,18 @@ class ClientTask(threading.Thread):
         socket.identity = identity.encode('ascii')
         socket.connect('ipc:///tmp/lcztools/network_0')
         socket.send(bytes([1])) # Hi message
+        socket.recv()
         message = self.board.serialize_features()
         for _ in range(20000):
             # print("Client {} sending message".format(identity))
             # message = self.board.serialize_features()
             for _ in range(32):
                 socket.send(message)
+                # print("Send:", self.id)
             
             for _ in range(32):
                 response = memoryview(socket.recv())
+                # print("Response:", self.id)
                 # print ("Client {} received message of length {}".format(identity, len(response)))
                 if len(response)==7436: # single precision
                     value = np.frombuffer(response[:4], dtype=np.float32)
@@ -44,7 +47,7 @@ class ClientTask(threading.Thread):
 
 def main():
     """main function"""
-    for i in range(16):
+    for i in range(32):
         client = ClientTask(i)
         client.start()
 
