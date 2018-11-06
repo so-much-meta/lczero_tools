@@ -50,6 +50,7 @@ class LeelaClientNet(LeelaNetBase):
         message = leela_board.serialize_features()
         self.socket.send(message)
         response = self.socket.recv()
+        # print("Got response!")
         response = memoryview(response)
         if len(response)==7436: # single precision
             value = np.frombuffer(response[:4], dtype=np.float32)
@@ -62,10 +63,12 @@ class LeelaClientNet(LeelaNetBase):
     def hi(self):
         """Tell the server we're here, and it should be expecting some messages"""
         self.socket.send(bytes([1]))
+        response = self.socket.recv()
 
     def bye(self):
         """Tell the server we're going away for a bit or forever, until we hi again"""
         self.socket.send(bytes([255]))
+        response = self.socket.recv()
     
     def close(self):
         self.bye()
