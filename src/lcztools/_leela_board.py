@@ -151,7 +151,7 @@ class LeelaBoard:
     def deserialize_features(cls, serialized):
         planes_stack = []
         rule50_count = serialized[-1]  # last byte is rule 50
-        board_attrs = np.unpackbits(bytearray(serialized[-2:-1]))  # second to last byte
+        board_attrs = np.unpackbits(memoryview(serialized[-2:-1]))  # second to last byte
         us_ooo, us_oo, them_ooo, them_oo, side_to_move = board_attrs[:5]
         bytes_per_history = 97
         for history_idx in range(0, bytes_per_history*8, bytes_per_history):
@@ -159,11 +159,11 @@ class LeelaBoard:
             repetition = serialized[history_idx+96]
             if not side_to_move:
                 # we're white
-                planes = (np.unpackbits(bytearray(plane_bytes))[::-1]
+                planes = (np.unpackbits(memoryview(plane_bytes))[::-1]
                                         .reshape(12, 8, 8)[::-1])                
             else:
                 # We're black
-                planes = (np.unpackbits(bytearray(plane_bytes))[::-1]
+                planes = (np.unpackbits(memoryview(plane_bytes))[::-1]
                                         .reshape(12, 8, 8)[::-1]
                                         .reshape(2,6,8,8)[::-1,:,::-1]
                                         .reshape(12, 8,8))
@@ -190,11 +190,11 @@ class LeelaBoard:
             plane_bytes = data.plane_bytes
             if not curdata.side_to_move:
                 # we're white
-                planes = (np.unpackbits(bytearray(plane_bytes))[::-1]
+                planes = (np.unpackbits(memoryview(plane_bytes))[::-1]
                                         .reshape(12, 8, 8)[::-1])                
             else:
                 # We're black
-                planes = (np.unpackbits(bytearray(plane_bytes))[::-1]
+                planes = (np.unpackbits(memoryview(plane_bytes))[::-1]
                                         .reshape(12, 8, 8)[::-1]
                                         .reshape(2,6,8,8)[::-1,:,::-1]
                                         .reshape(12, 8,8))
@@ -252,7 +252,7 @@ class LeelaBoard:
         # return np.frombuffer(decompressed, dtype=np.uint8).astype(np.float32).reshape(-1,8,8)
         piece_plane_bytes = decompressed[:-8]
         scalar_bytes = decompressed[-8:]
-        piece_plane_arr = np.unpackbits(bytearray(piece_plane_bytes))
+        piece_plane_arr = np.unpackbits(memoryview(piece_plane_bytes))
         scalar_arr = np.frombuffer(scalar_bytes, dtype=np.uint8).repeat(64)
         result = np.concatenate((piece_plane_arr, scalar_arr)).astype(np.float32).reshape(-1,8,8)
         return result

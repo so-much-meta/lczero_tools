@@ -19,7 +19,7 @@ FINISHED = False
 def signal_handler(signal, frame):
     """Signal handler started after threads start"""
     global FINISHED
-    print('Ctrl+C Pressed. Exiting')
+    print('\nCtrl+C Pressed. Exiting')
     FINISHED = True
 
 lcztools_tmp_path = pathlib.Path("/tmp/lcztools")
@@ -48,15 +48,43 @@ class BatchProcessor(threading.Thread):
     
     def run(self):
         while not FINISHED:
-            features_stack, batch_ident = self.queue_in.get()
+            item = self.queue_in.get()
+            if item=='POISON':
+                break
+            features_stack, batch_ident = item 
             with self._cuda_lock:
                 pol, val = self.model(features_stack)
                 pol = pol.cpu().numpy()
                 val = val.cpu().numpy()
             self.queue_out.put((batch_ident, pol, val))
             self.socket.send(b'')
+        print("Network {} - Exiting batch processor".format(self.network_id))
         self.socket.close()
                 
+class DummyBatchProcessor(BatchProcessor):
+    """This doesn't actually run the model. Just for testing speed"""
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dummy_pol = np.random.rand(1858).astype(np.float32)
+        self.dummy_val = np.random.rand(1).astype(np.float32)
+    
+    def run(self):
+        while not FINISHED:
+            item = self.queue_in.get()
+            if item=='POISON':
+                break
+            features_stack, batch_ident = item 
+            with self._cuda_lock:
+                pol, val = self.model(features_stack)
+            length = len(batch_ident)
+            pol = np.stack([self.dummy_pol]*length)
+            val = np.stack([self.dummy_val]*length)
+            self.queue_out.put((batch_ident, pol, val))
+            self.socket.send(b'')
+        print("Network {} - Exiting batch processor".format(self.network_id))
+        self.socket.close()
+
 
 
 class Receiver(threading.Thread):
@@ -80,13 +108,14 @@ class Receiver(threading.Thread):
         self.poller.register(self.batch_socket, zmq.POLLIN)
         self.batch_ident = []
         self.batch_features = []
-        self.batch_size = 1
+        # self.batch_size = 1
         self.batches_processed = 0
         self.batches_processed_start = time.time()
         self.max_batch_size = 32 if not max_batch_size else max_batch_size
         assert(1 <= self.max_batch_size <= 2048)
         self.messages_received = 0
-        self.messages_sent = 0        
+        self.messages_sent = 0
+        self.elapsed_items_processed = 0  # Count of responses in current duration
     
     def queue_batch(self):
         """Put a batch into the queue for the BatchProcessor""" 
@@ -98,15 +127,20 @@ class Receiver(threading.Thread):
         cur_features_stack = np.frombuffer(b''.join(f for f in self.batch_features), dtype=np.uint8).reshape(-1,*item_shape)
         cur_features_stack = cur_features_stack.astype(self.dtype)
         cur_batch_ident = self.batch_ident[:]
-        self.batch_queue.put((cur_features_stack, cur_batch_ident))
+        while True:
+            try:
+                self.batch_queue.put((cur_features_stack, cur_batch_ident), timeout=1)
+            except queue.Full:
+                if FINISHED:
+                    self.batch_ident.clear()
+                    self.batch_features.clear()
+                    return
+                else:
+                    continue
+            break
         self.batch_ident.clear()
         self.batch_features.clear()
         self.batches_processed += 1
-        if (self.batches_processed % 400)==0:
-            elapsed = time.time() - self.batches_processed_start
-            print('Network {} -- batch_size {}: {} bps, {} sps'.format(self.network_id, self.batch_size, 400/elapsed, 400*self.batch_size/elapsed))
-            sys.stdout.flush()
-            self.batches_processed_start = time.time()
 
     def run(self):
         blocked = False
@@ -116,21 +150,22 @@ class Receiver(threading.Thread):
         deserialize_features = LeelaBoard.deserialize_features
         batch_features_append = self.batch_features.append
         batch_ident = self.batch_ident
-        while not FINISHED: 
+        while not FINISHED:
+            elapsed = time.time() - self.batches_processed_start
+            if elapsed >= 5:  # Print information about every 5 seconds
+                # print('Network {} -- batch_size {}: {} bps, {} sps'.format(self.network_id, self.batch_size, 400/elapsed, 400*self.batch_size/elapsed))
+                if not blocked or self.elapsed_items_processed>0:
+                    print('Network {} -- {} evals/s'.format(self.network_id, self.elapsed_items_processed/elapsed))
+                sys.stdout.flush()
+                self.batches_processed_start = time.time()
+                self.elapsed_items_processed = 0
             socks = dict(poll(1000))
             if not socks:
                 # We've been blocked for 2 seconds. Let's set the batch size
-                if True or not blocked:
-                    print("Batch size", self.batch_size, "Processed", self.batches_processed)
+                if not blocked or len(self.batch_ident):
                     print("Network {} -- BLOCKED with {} items in batch".format(self.network_id, len(self.batch_ident)))
-                    print("Network {} -- messages received {}, sent {}".format(self.network_id, self.messages_received, self.messages_sent))
                 if not len(self.batch_ident):
-                    blocked = True    
-                if len(self.batch_ident) == 0:
-                    self.batch_size = 1
-                else:
-                    self.batch_size = 2**int(math.log(len(self.batch_ident), 2))
-                self.queue_batch()
+                    blocked = True
                 continue
             # Read any requests
             if self.socket in socks:
@@ -151,10 +186,12 @@ class Receiver(threading.Thread):
                             continue            
                         batch_ident_append(ident)
                         batch_features_append(deserialize_features(msg))
-                        if len(self.batch_ident)>=self.batch_size:
+                        if len(self.batch_ident)>=self.max_batch_size:
                             self.queue_batch()
                 except zmq.Again as e:
                     pass
+            if self.batch_queue.empty() and len(self.batch_ident):
+                self.queue_batch()  # Queue the rest of the items if the current batch queue is empty
             # Respond as needed     
             if self.batch_socket in socks:
                 message_in = self.batch_socket.recv() # throw away...
@@ -163,14 +200,28 @@ class Receiver(threading.Thread):
                     result = value.tobytes() + policy.tobytes()
                     self.socket.send_multipart([*ident, result])
                     self.messages_sent += 1
+                    self.elapsed_items_processed += 1
+        try:
+            while True:  # Empty batch queue just in case, so that batch processor doesn't hang
+                self.batch_queue.get(False)
+        except queue.Empty:
+            pass                    
+        self.batch_queue.put('POISON')  # get the batch queue thread to stop
+        try:
+            while True:  # Empty response queue just in case, so that batch processor doesn't hang
+                self.response_queue.get(False)
+        except queue.Empty:
+            pass
+        print("Network {} - Exiting receiver".format(self.network_id))
         self.socket.close()
+        self.batch_socket.close()
            
     
 
 class NetworkServer:
     """This class is responsible for binding and proxying the frontend,
      managing the network model, and managing the BatchProcessor and Receiver"""
-    def __init__(self, context, weights_file, network_id, max_batch_size=None, half=False):
+    def __init__(self, context, weights_file, network_id, max_batch_size=None, half=False, dummy=False):
         super().__init__ ()
         self.context = context
         self.network_id = network_id
@@ -181,24 +232,30 @@ class NetworkServer:
             dtype = np.float16
         else:
             dtype = np.float32
-        self.batch_queue = queue.Queue(3)
+        self.dummy = dummy  # Use a stubbed out batch processor that doesn't actually compute
+        self.batch_queue = queue.Queue(4)
         self.response_queue = queue.Queue(256) # Responses are in batches, so it's not important if this is big
         self.receiver = Receiver(self.context, network_id, self.batch_queue, self.response_queue, max_batch_size, dtype)
         self.batch_processor = None  # won't load until run
     
     def load(self):
-        with BatchProcessor._cuda_lock:
-            net = load_network(backend='pytorch_cuda', filename=self.weights_file, half=self.half)
-        self.model = net.model
-        self.batch_processor = BatchProcessor(self.context, self.model, self.network_id, self.batch_queue, self.response_queue)
+        if dummy:
+            self.model = None
+            self.batch_processor = DummyBatchProcessor(self.context, self.model, self.network_id, self.batch_queue, self.response_queue)
+        else:
+            with BatchProcessor._cuda_lock:
+                net = load_network(backend='pytorch_cuda', filename=self.weights_file, half=self.half)
+            self.model = net.model
+            self.batch_processor = BatchProcessor(self.context, self.model, self.network_id, self.batch_queue, self.response_queue)
 
     def start(self):
+        self.batch_processor.daemon = True  # To prevent it from hanging after ctrl-c
         self.batch_processor.start()
         self.receiver.start()
     
     def join(self):
-        self.batch_processor.join()
         self.receiver.join()
+        time.sleep(1.5) # Give the batch processor a second to cleanup
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -216,7 +273,12 @@ if __name__ == '__main__':
     else:
         print("Using single precision")
         half = False
-    args = [arg for arg in args if arg!='--half']
+    if '--dummy' in args:
+        print("Using dummy processor")
+        dummy = True
+    else:
+        dummy = False
+    args = [arg for arg in args if arg not in ('--half', '--dummy')]
     for arg in args:
         if not cur_weights_file:
             if not pathlib.Path(arg).is_file():
@@ -228,7 +290,7 @@ if __name__ == '__main__':
             max_batch_size = int(arg)
         except:
             pass
-        tasks.append(NetworkServer(context, cur_weights_file, len(tasks), max_batch_size, half=half))
+        tasks.append(NetworkServer(context, cur_weights_file, len(tasks), max_batch_size, half=half, dummy=dummy))
         cur_weights_file = None
         if max_batch_size is None:
             if not pathlib.Path(arg).is_file():
@@ -238,7 +300,7 @@ if __name__ == '__main__':
     if cur_weights_file:
         print(cur_weights_file)
         print(args)
-        tasks.append(NetworkServer(context, cur_weights_file, len(tasks), max_batch_size, half=half))
+        tasks.append(NetworkServer(context, cur_weights_file, len(tasks), max_batch_size, half=half, dummy=dummy))
     print("Loading networks and starting server tasks")
     for task in tasks:
         task.load()
@@ -250,4 +312,4 @@ if __name__ == '__main__':
     print()
     for task in tasks:
         task.join()
-    context.term()            
+    context.term()
