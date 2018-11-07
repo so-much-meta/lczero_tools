@@ -92,7 +92,11 @@ class Receiver(threading.Thread):
         """Put a batch into the queue for the BatchProcessor""" 
         if not self.batch_ident:
             return
-        cur_features_stack = np.stack(self.batch_features).astype(self.dtype)
+        # cur_features_stack = np.stack(self.batch_features).astype(self.dtype)
+        # The following optimization is about twice as fast as np.stack
+        item_shape = self.batch_features[0].shape
+        cur_features_stack = np.frombuffer(b''.join(f for f in self.batch_features), dtype=np.uint8).reshape(-1,*item_shape)
+        cur_features_stack = cur_features_stack.astype(self.dtype)
         cur_batch_ident = self.batch_ident[:]
         self.batch_queue.put((cur_features_stack, cur_batch_ident))
         self.batch_ident.clear()
@@ -178,7 +182,7 @@ class NetworkServer:
         else:
             dtype = np.float32
         self.batch_queue = queue.Queue(3)
-        self.response_queue = queue.Queue(256)
+        self.response_queue = queue.Queue(256) # Responses are in batches, so it's not important if this is big
         self.receiver = Receiver(self.context, network_id, self.batch_queue, self.response_queue, max_batch_size, dtype)
         self.batch_processor = None  # won't load until run
     
