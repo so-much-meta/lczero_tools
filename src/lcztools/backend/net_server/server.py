@@ -279,6 +279,7 @@ if __name__ == '__main__':
     else:
         dummy = False
     args = [arg for arg in args if arg not in ('--half', '--dummy')]
+    max_batch_size = None
     for arg in args:
         if not cur_weights_file:
             if not pathlib.Path(arg).is_file():
