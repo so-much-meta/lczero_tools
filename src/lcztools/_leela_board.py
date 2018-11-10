@@ -36,14 +36,14 @@ class LeelaBoard:
         self.can_claim_draw = self.pc_method('can_claim_draw')
         self.generate_legal_moves = self.pc_method('generate_legal_moves')
                 
-    def copy(self):
+    def copy(self, history=7):
         """Note! Currently the copy constructor uses pc_board.copy(stack=False), which makes pops impossible"""
         cls = type(self)
         copied = cls.__new__(cls)
         copied.pc_board = self.pc_board.copy(stack=False)
-        copied.pc_board.stack[:] = self.pc_board.stack[-7:]
-        copied.pc_board.move_stack[:] = self.pc_board.move_stack[-7:]
-        copied.lcz_stack = self.lcz_stack[:]
+        copied.pc_board.stack[:] = self.pc_board.stack[-history:]
+        copied.pc_board.move_stack[:] = self.pc_board.move_stack[-history:]
+        copied.lcz_stack = self.lcz_stack[-history:]
         copied._lcz_transposition_counter = self._lcz_transposition_counter.copy()
         copied.is_game_over = copied.pc_method('is_game_over')
         copied.can_claim_draw = copied.pc_method('can_claim_draw')
