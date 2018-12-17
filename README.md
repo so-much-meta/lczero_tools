@@ -73,9 +73,9 @@ pip install git+https://github.com/so-much-meta/lczero_tools.git#egg=lczero-tool
 git clone https://github.com/so-much-meta/lczero_tools
 cd lczero_tools
 # Note: Creating and using a virtualenv or Conda environment before install is suggested, as always
-pip install .[torch, util]
+pip install .[torch,util]
 # Or for developer/editable install, to make in place changes:
-# pip install -e .[torch, util]
+# pip install -e .[torch,util]
 ```
 
 ## TODO
