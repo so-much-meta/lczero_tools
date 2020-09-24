@@ -2,7 +2,7 @@
 Python utilities for experimenting with Leela Chess Zero a neural network based chess engine: https://github.com/glinscott/leela-chess/
 
 ## IMPORTANT
-I have not actively worked on this in years. Many things have changed to Leela Chess Zero's network architecture in the meantime, including a different weights file format. I have intended to come back to this to update it, and still would like to, but for now it is where it is. I leave this here hoping somebody sees something useful or is able to update it.
+I have not actively worked on this in years. Many things have changed to Leela Chess Zero's network architecture in the meantime, including a different weights file format. I have intended to come back to this to update it, and still would like to, but for now this project is where it is. This will not work with the latest versions of Leela's network without significant changes. However, maybe somebody sees something useful here or wants to update this project.
 
 #### Note: This is primarily for looking at the Leela Chess neural network itself, outside of search/MCTS (although search may be added eventually).
 
